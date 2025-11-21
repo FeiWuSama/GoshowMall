@@ -11,7 +11,7 @@ type Result struct {
 	Msg  string `json:"msg"`
 }
 
-func NewResult(ctx *gin.Context, data any) {
+func NewResultWithOk(ctx *gin.Context, data any) {
 	ctx.JSON(http.StatusOK, Result{
 		Code: OK.Code,
 		Data: data,
