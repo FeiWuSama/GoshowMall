@@ -5,7 +5,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var logger *zap.Logger
+var myLogger *zap.Logger
 var atom = zap.NewAtomicLevelAt(zap.DebugLevel)
 
 func init() {
@@ -25,11 +25,12 @@ func init() {
 		OutputPaths:      []string{"stdout"},
 		ErrorOutputPaths: []string{"stderr"},
 	}
-	logger, err := config.Build()
+	var err error
+	myLogger, err = config.Build()
 	if err != nil {
 		panic(err)
 	}
-	logger = logger.WithOptions(zap.AddCallerSkip(1))
+	myLogger = myLogger.WithOptions(zap.AddCallerSkip(1))
 }
 
 func SetLevel(level string) {
@@ -41,17 +42,17 @@ func SetLevel(level string) {
 }
 
 func Debug(msg string, fields ...zap.Field) {
-	logger.Debug(msg, fields...)
+	myLogger.Debug(msg, fields...)
 }
 
 func Info(msg string, fields ...zap.Field) {
-	logger.Info(msg, fields...)
+	myLogger.Info(msg, fields...)
 }
 
 func Warn(msg string, fields ...zap.Field) {
-	logger.Warn(msg, fields...)
+	myLogger.Warn(msg, fields...)
 }
 
 func Error(msg string, fields ...zap.Field) {
-	logger.Error(msg, fields...)
+	myLogger.Error(msg, fields...)
 }
