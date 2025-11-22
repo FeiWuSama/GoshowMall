@@ -83,5 +83,8 @@ func (r *Router) route(root *gin.RouterGroup) {
 			"message": "ok",
 		})
 	})
-	root.GET("hello", r.admin.HelloWorld)
+	adminRoute := root.Group("/adminRoute")
+	{
+		adminRoute.GET("/hello", r.admin.HelloWorld)
+	}
 }
