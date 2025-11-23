@@ -7,6 +7,7 @@ import (
 	"workspace-goshow-mall/api/admin"
 	"workspace-goshow-mall/api/user"
 	"workspace-goshow-mall/config"
+	"workspace-goshow-mall/utils/logger"
 )
 
 type IRouter interface {
@@ -66,7 +67,10 @@ func (r *Router) Register(engine *gin.Engine) {
 	root := engine.Group(r.rootPath)
 	engine.Any("/check", r.checkServer())
 	r.route(root)
-	engine.Run(":" + strconv.Itoa(r.config.Server.Port))
+	err := engine.Run(":" + strconv.Itoa(r.config.Server.Port))
+	if err != nil {
+		logger.Debug("启动服务失败")
+	}
 }
 
 func (r *Router) SpanFilter(c *gin.Context) bool {
