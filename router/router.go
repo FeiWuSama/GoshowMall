@@ -57,10 +57,10 @@ func (r *Router) Register(engine *gin.Engine) {
 	gin.SetMode(gin.DebugMode)
 	// 添加日志中间件
 	engine.Use(gin.Logger())
-	//注册gin的错误处理中间件
+	// 注册gin的错误处理中间件
 	engine.Use(gin.Recovery())
-	//todo 日志中间件
-
+	// 日志中间件
+	engine.Use(AccessLogMiddleware(r.AccessRecordFilter))
 	if r.config.Server.EnablePprof {
 		//todo 增加链路追踪的逻辑
 	}
