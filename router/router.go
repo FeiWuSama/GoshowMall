@@ -1,9 +1,11 @@
 package router
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"strconv"
 	"workspace-goshow-mall/adaptor"
+	"workspace-goshow-mall/adaptor/repo/dto"
 	"workspace-goshow-mall/api/admin"
 	"workspace-goshow-mall/api/user"
 	"workspace-goshow-mall/config"
@@ -23,6 +25,7 @@ type Router struct {
 	checkFunc func() error
 	user      *user.Ctrl
 	admin     *admin.Ctrl
+	adaptor   *adaptor.Adaptor
 }
 
 func NewRouter(adaptor *adaptor.Adaptor, config config.Config, checkFunc func() error) *Router {
@@ -33,6 +36,7 @@ func NewRouter(adaptor *adaptor.Adaptor, config config.Config, checkFunc func() 
 		user:      user.NewCtrl(adaptor),
 		admin:     admin.NewCtrl(adaptor),
 		checkFunc: checkFunc,
+		adaptor:   adaptor,
 	}
 }
 
@@ -74,6 +78,11 @@ func (r *Router) Register(engine *gin.Engine) {
 }
 
 func (r *Router) SpanFilter(c *gin.Context) bool {
+	if c.Request.URL.Path == "/api/admin/login" ||
+		c.Request.URL.Path == "/api/user/login" ||
+		c.Request.URL.Path == "/api/user/register" {
+		return false
+	}
 	return true
 }
 
@@ -87,7 +96,14 @@ func (r *Router) route(root *gin.RouterGroup) {
 			"message": "ok",
 		})
 	})
-	adminRoute := root.Group("/adminRoute")
+	r.adminRoute(root)
+}
+
+func (r *Router) adminRoute(root *gin.RouterGroup) {
+	// 鉴权中间件
+	adminRoute := root.Group("/admin", AdminAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*dto.UserDto, error) {
+		return &dto.UserDto{}, nil
+	}, r.adaptor))
 	{
 		adminRoute.GET("/hello", r.admin.HelloWorld)
 	}
