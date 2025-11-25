@@ -1,7 +1,12 @@
 package service
 
-import "context"
+import (
+	"context"
+	"workspace-goshow-mall/adaptor/repo/dto"
+)
 
 type IAdminService interface {
-	HelloWorld(c context.Context) string
+	SCreateAdmin(ctx context.Context, dto dto.AddAdminDto, createUserId int64) int64
+	SUpdateAdmin(ctx context.Context, adminDto dto.UpdateAdminDto, createUserId int64) bool
+	SChangeStatus(ctx context.Context, id string, status string, changeUserId int64) bool
 }

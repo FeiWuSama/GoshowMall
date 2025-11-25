@@ -3,12 +3,17 @@ package router
 import (
 	"context"
 	"github.com/gin-gonic/gin"
+	knife4goFiles "github.com/go-webtools/knife4go"
+	knife4go "github.com/go-webtools/knife4go/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"strconv"
 	"workspace-goshow-mall/adaptor"
 	"workspace-goshow-mall/adaptor/repo/vo"
 	"workspace-goshow-mall/api/admin"
 	"workspace-goshow-mall/api/user"
 	"workspace-goshow-mall/config"
+	_ "workspace-goshow-mall/docs"
 	"workspace-goshow-mall/utils/logger"
 )
 
@@ -70,6 +75,8 @@ func (r *Router) Register(engine *gin.Engine) {
 	}
 	root := engine.Group(r.rootPath)
 	engine.Any("/check", r.checkServer())
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	engine.GET("/knife4go/*any", knife4go.WrapHandler(knife4goFiles.Handler))
 	r.route(root)
 	err := engine.Run(":" + strconv.Itoa(r.config.Server.Port))
 	if err != nil {
@@ -102,9 +109,13 @@ func (r *Router) route(root *gin.RouterGroup) {
 func (r *Router) adminRoute(root *gin.RouterGroup) {
 	// 鉴权中间件
 	adminRoute := root.Group("/admin", AdminAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*vo.UserVo, error) {
-		return &vo.UserVo{}, nil
+		return &vo.UserVo{
+			Id: 1,
+		}, nil
 	}, r.adaptor))
 	{
-		adminRoute.POST("/create", r.admin.CreateUser)
+		adminRoute.POST("/create", r.admin.CreateAdmin)
+		adminRoute.POST("/update", r.admin.UpdateAdmin)
+		adminRoute.POST("/status/:id/:status", r.admin.ChangeStatus)
 	}
 }
