@@ -3,11 +3,16 @@ package constants
 const (
 	UserToken  = "token"
 	AdminToken = "token"
+)
 
-	UserTokenKey  = "goshow:user:token:"
-	AdminTokenKey = "goshow:admin:token:"
+const (
+	UserTokenKey     = "goshow:user:token:"
+	AdminTokenKey    = "goshow:admin:token:"
+	CaptchaKey       = "goshow:captcha:"
+	CaptchaTicketKey = "goshow:ticket:"
 
-	TokenExpire = 60 * 60 * 24 * 3
+	TokenExpire   = 60 * 60 * 24 * 3
+	CaptchaExpire = 60 * 5
 )
 
 const (

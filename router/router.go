@@ -8,6 +8,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"strconv"
+	"strings"
 	"workspace-goshow-mall/adaptor"
 	"workspace-goshow-mall/adaptor/repo/vo"
 	"workspace-goshow-mall/api/admin"
@@ -85,9 +86,8 @@ func (r *Router) Register(engine *gin.Engine) {
 }
 
 func (r *Router) SpanFilter(c *gin.Context) bool {
-	if c.Request.URL.Path == "/api/admin/login" ||
-		c.Request.URL.Path == "/api/user/login" ||
-		c.Request.URL.Path == "/api/user/register" {
+	replaceUrl := strings.Replace(r.rootPath, c.Request.URL.Path, "", 1)
+	if whiteList[replaceUrl] {
 		return false
 	}
 	return true
@@ -114,6 +114,7 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 		}, nil
 	}, r.adaptor))
 	{
+		adminRoute.GET("/captcha", r.admin.GetCaptcha)
 		adminRoute.POST("/create", r.admin.CreateAdmin)
 		adminRoute.POST("/update", r.admin.UpdateAdmin)
 		adminRoute.POST("/status/:id/:status", r.admin.ChangeStatus)

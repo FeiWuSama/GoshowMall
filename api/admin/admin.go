@@ -2,25 +2,34 @@ package admin
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/goccy/go-json"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"workspace-goshow-mall/adaptor"
+	"workspace-goshow-mall/adaptor/redis"
 	"workspace-goshow-mall/adaptor/repo/dto"
+	"workspace-goshow-mall/adaptor/repo/vo"
 	"workspace-goshow-mall/api"
 	"workspace-goshow-mall/constants"
 	"workspace-goshow-mall/logic/admin"
 	"workspace-goshow-mall/result"
 	"workspace-goshow-mall/service"
+	"workspace-goshow-mall/utils/captcha"
+	"workspace-goshow-mall/utils/logger"
 )
 
 type Ctrl struct {
 	api.BaseCtrl
 	adaptor      *adaptor.Adaptor
 	adminService service.IAdminService
+	verify       *redis.Verify
 }
 
 func NewCtrl(adaptor *adaptor.Adaptor) *Ctrl {
 	return &Ctrl{
 		adaptor:      adaptor,
 		adminService: admin.NewService(adaptor),
+		verify:       redis.NewVerify(adaptor.Redis),
 	}
 }
 
@@ -112,4 +121,62 @@ func (c *Ctrl) ChangeStatus(ctx *gin.Context) {
 		return
 	}
 	result.NewResultWithOk(ctx, nil)
+}
+
+// GetCaptcha
+// @Summary 获取验证码
+// @Tags 管理员接口
+// @Accept json
+// @Produce json
+// @host localhost:8080
+// @Router /api/admin/captcha [get]
+func (c *Ctrl) GetCaptcha(ctx *gin.Context) {
+	captchaDto := &dto.CaptchaDto{}
+	if err := ctx.ShouldBindQuery(captchaDto); err != nil {
+		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ParamError))
+		ctx.Abort()
+		return
+	}
+	newCaptcha := captcha.NewCaptcha()
+	var mbs64Data, tbs64Data string
+	captchaData, err := newCaptcha.Generate()
+	if err != nil {
+		ctx.Abort()
+		logger.Error("captcha error", zap.Error(err))
+		return
+	}
+	dotData, err := json.Marshal(captchaData.GetData())
+	if err != nil {
+		ctx.Abort()
+		logger.Error("captcha error", zap.Error(err))
+		return
+	}
+	mbs64Data, err = captchaData.GetMasterImage().ToBase64()
+	if err != nil {
+		ctx.Abort()
+		logger.Error("captcha error", zap.Error(err))
+		return
+	}
+	tbs64Data, err = captchaData.GetTileImage().ToBase64()
+	if err != nil {
+		ctx.Abort()
+		logger.Error("captcha error", zap.Error(err))
+		return
+	}
+	key := uuid.New().String()
+	err = c.verify.SaveCaptcha(ctx, key, string(dotData))
+	if err != nil {
+		ctx.Abort()
+		logger.Error("captcha error", zap.Error(err))
+		return
+	}
+	result.NewResultWithOk(ctx, vo.CaptchaVo{
+		Key:              key,
+		ImageBase64:      mbs64Data,
+		TitleImageBase64: tbs64Data,
+		TitleHeight:      captchaData.GetData().DX,
+		TitleWidth:       captchaData.GetData().DY,
+		TitleX:           captchaData.GetData().TileX,
+		TitleY:           captchaData.GetData().TileX,
+	})
 }

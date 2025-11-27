@@ -49,6 +49,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/go-webtools/knife4go v1.0.4 // indirect
 	github.com/goccy/go-yaml v1.18.0 // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
@@ -75,11 +76,14 @@ require (
 	github.com/swaggo/swag v1.16.6 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
+	github.com/wenlng/go-captcha-assets v1.0.7 // indirect
+	github.com/wenlng/go-captcha/v2 v2.0.4 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.23.0 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/image v0.16.0 // indirect
 	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
