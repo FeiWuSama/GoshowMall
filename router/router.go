@@ -86,7 +86,7 @@ func (r *Router) Register(engine *gin.Engine) {
 }
 
 func (r *Router) SpanFilter(c *gin.Context) bool {
-	replaceUrl := strings.Replace(r.rootPath, c.Request.URL.Path, "", 1)
+	replaceUrl := strings.Replace(c.Request.URL.Path, r.rootPath, "", 1)
 	if whiteList[replaceUrl] {
 		return false
 	}
