@@ -114,7 +114,7 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 		}, nil
 	}, r.adaptor))
 	{
-		adminRoute.GET("/captcha", r.admin.GetCaptcha)
+		adminRoute.GET("/captcha", r.admin.GetSlideCaptcha)
 		adminRoute.POST("/create", r.admin.CreateAdmin)
 		adminRoute.POST("/update", r.admin.UpdateAdmin)
 		adminRoute.POST("/status/:id/:status", r.admin.ChangeStatus)

@@ -123,16 +123,16 @@ func (c *Ctrl) ChangeStatus(ctx *gin.Context) {
 	result.NewResultWithOk(ctx, nil)
 }
 
-// GetCaptcha
+// GetSlideCaptcha
 // @Summary 获取验证码
 // @Tags 管理员接口
 // @Accept json
 // @Produce json
-// @Success 20100 {object} result.Result{data=dto.CaptchaDto}
+// @Success 20100 {object} result.Result{data=vo.SlideCaptchaVo}
 // @host localhost:8080
 // @Router /api/admin/captcha [get]
-func (c *Ctrl) GetCaptcha(ctx *gin.Context) {
-	captchaDto := &dto.CaptchaDto{}
+func (c *Ctrl) GetSlideCaptcha(ctx *gin.Context) {
+	captchaDto := &dto.SlideCaptchaDto{}
 	if err := ctx.ShouldBindQuery(captchaDto); err != nil {
 		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ParamError))
 		ctx.Abort()
@@ -171,7 +171,7 @@ func (c *Ctrl) GetCaptcha(ctx *gin.Context) {
 		logger.Error("captcha error", zap.Error(err))
 		return
 	}
-	result.NewResultWithOk(ctx, vo.CaptchaVo{
+	result.NewResultWithOk(ctx, vo.SlideCaptchaVo{
 		Key:              key,
 		ImageBase64:      mbs64Data,
 		TitleImageBase64: tbs64Data,

@@ -6,7 +6,7 @@ type UserVo struct {
 	Token    string `json:"token"`
 }
 
-type CaptchaVo struct {
+type SlideCaptchaVo struct {
 	Key              string `json:"key"`
 	ImageBase64      string `json:"ImageBase64"`
 	TitleImageBase64 string `json:"TitleImageBase64"`

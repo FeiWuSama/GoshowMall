@@ -6,13 +6,13 @@ import (
 	"fmt"
 )
 
-type CaptchaDto struct {
+type SlideCaptchaDto struct {
 	Once string `url:"once"`
 	Time int64  `url:"ts"`
 	Sign string `url:"sign"`
 }
 
-func (c *CaptchaDto) CheckSign() bool {
+func (c *SlideCaptchaDto) CheckSign() bool {
 	data := fmt.Sprintf("%s%s%d", c.Once, "fewiwusama2015", c.Time)
 	hash := sha256.Sum256([]byte(data))
 	return c.Sign == hex.EncodeToString(hash[:])
