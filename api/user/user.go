@@ -28,12 +28,12 @@ func NewCtrl(adaptor *adaptor.Adaptor) *Ctrl {
 
 // GetSlideCaptcha
 // @Summary 获取滑块验证码
-// @Tags 用户接口
+// @Tags user
 // @Accept json
 // @Produce json
-// @Success 20100 {object} result.Result{data=vo.SlideCaptchaVo}
+// @Success 200 {object} result.Result[vo.SlideCaptchaVo]
 // @host localhost:8080
-// @Router /api/admin/captcha [get]
+// @Router /api/user/captcha/slide [get]
 func (c *Ctrl) GetSlideCaptcha(ctx *gin.Context) {
 	captchaDto := &dto.SlideCaptchaDto{}
 	if err := ctx.ShouldBindQuery(captchaDto); err != nil {
@@ -74,7 +74,7 @@ func (c *Ctrl) GetSlideCaptcha(ctx *gin.Context) {
 		logger.Error("captcha error", zap.Error(err))
 		return
 	}
-	result.NewResultWithOk(ctx, vo.SlideCaptchaVo{
+	result.NewResultWithOk[vo.SlideCaptchaVo](ctx, vo.SlideCaptchaVo{
 		Key:              key,
 		ImageBase64:      mbs64Data,
 		TitleImageBase64: tbs64Data,

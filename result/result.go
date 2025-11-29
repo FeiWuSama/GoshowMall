@@ -5,14 +5,14 @@ import (
 	"net/http"
 )
 
-type Result struct {
+type Result[T any] struct {
 	Code int    `json:"code"`
-	Data any    `json:"data"`
+	Data T      `json:"data"`
 	Msg  string `json:"msg"`
 }
 
-func NewResultWithOk(ctx *gin.Context, data any) {
-	ctx.JSON(http.StatusOK, Result{
+func NewResultWithOk[T any](ctx *gin.Context, data T) {
+	ctx.JSON(http.StatusOK, Result[T]{
 		Code: OK.Code,
 		Data: data,
 		Msg:  OK.Msg,
@@ -20,7 +20,7 @@ func NewResultWithOk(ctx *gin.Context, data any) {
 }
 
 func NewResultWithError(ctx *gin.Context, data any, err *BusinessError) {
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, Result[any]{
 		Code: err.Code,
 		Data: data,
 		Msg:  err.Msg,

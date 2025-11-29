@@ -35,7 +35,7 @@ func NewCtrl(adaptor *adaptor.Adaptor) *Ctrl {
 
 // CreateAdmin
 // @Summary 创建用户
-// @Tags 管理员接口
+// @Tags admin
 // @Accept json
 // @Produce json
 // @host localhost:8080
@@ -61,12 +61,12 @@ func (c *Ctrl) CreateAdmin(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	result.NewResultWithOk(ctx, nil)
+	result.NewResultWithOk[any](ctx, nil)
 }
 
 // UpdateAdmin
 // @Summary 更新用户
-// @Tags 管理员接口
+// @Tags admin
 // @Accept json
 // @Produce json
 // @host localhost:8080
@@ -92,12 +92,12 @@ func (c *Ctrl) UpdateAdmin(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	result.NewResultWithOk(ctx, nil)
+	result.NewResultWithOk[any](ctx, nil)
 }
 
 // ChangeStatus
 // @Summary 改变用户状态
-// @Tags 管理员接口
+// @Tags admin
 // @Accept json
 // @Produce json
 // @host localhost:8080
@@ -120,17 +120,17 @@ func (c *Ctrl) ChangeStatus(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	result.NewResultWithOk(ctx, nil)
+	result.NewResultWithOk[any](ctx, nil)
 }
 
 // GetSlideCaptcha
-// @Summary 获取验证码
-// @Tags 管理员接口
+// @Summary 获取滑块验证码
+// @Tags admin
 // @Accept json
 // @Produce json
-// @Success 20100 {object} result.Result{data=vo.SlideCaptchaVo}
+// @Success 200 {object} result.Result[vo.SlideCaptchaVo]
 // @host localhost:8080
-// @Router /api/admin/captcha [get]
+// @Router /api/admin/captcha/slide [get]
 func (c *Ctrl) GetSlideCaptcha(ctx *gin.Context) {
 	captchaDto := &dto.SlideCaptchaDto{}
 	if err := ctx.ShouldBindQuery(captchaDto); err != nil {
@@ -171,7 +171,7 @@ func (c *Ctrl) GetSlideCaptcha(ctx *gin.Context) {
 		logger.Error("captcha error", zap.Error(err))
 		return
 	}
-	result.NewResultWithOk(ctx, vo.SlideCaptchaVo{
+	result.NewResultWithOk[vo.SlideCaptchaVo](ctx, vo.SlideCaptchaVo{
 		Key:              key,
 		ImageBase64:      mbs64Data,
 		TitleImageBase64: tbs64Data,
