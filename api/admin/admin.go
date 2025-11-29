@@ -128,6 +128,7 @@ func (c *Ctrl) ChangeStatus(ctx *gin.Context) {
 // @Tags 管理员接口
 // @Accept json
 // @Produce json
+// @Success 20100 {object} result.Result{data=dto.CaptchaDto}
 // @host localhost:8080
 // @Router /api/admin/captcha [get]
 func (c *Ctrl) GetCaptcha(ctx *gin.Context) {
@@ -174,9 +175,9 @@ func (c *Ctrl) GetCaptcha(ctx *gin.Context) {
 		Key:              key,
 		ImageBase64:      mbs64Data,
 		TitleImageBase64: tbs64Data,
-		TitleHeight:      captchaData.GetData().DX,
-		TitleWidth:       captchaData.GetData().DY,
-		TitleX:           captchaData.GetData().TileX,
-		TitleY:           captchaData.GetData().TileX,
+		TitleHeight:      captchaData.GetData().Width,
+		TitleWidth:       captchaData.GetData().Height,
+		TitleX:           captchaData.GetData().DY,
+		TitleY:           captchaData.GetData().DY,
 	})
 }
