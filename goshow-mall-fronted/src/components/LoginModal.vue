@@ -2,7 +2,7 @@
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { Form, Input, Button, Tabs, Space, message, Modal } from 'ant-design-vue'
 import { UserOutlined, LockOutlined, PhoneOutlined, QrcodeOutlined } from '@ant-design/icons-vue'
-import { getUserCaptchaSlide } from '@/api/user.ts'
+import { getUserCaptchaSlide, postUserCaptchaSlideVerify } from '@/api/user.ts'
 
 interface Props {
   visible: boolean
@@ -131,36 +131,52 @@ const handleCodeLogin = async () => {
 // 验证滑块
 const handleVerifyCaptcha = async () => {
   captchaVerifying.value = true
-  // try {
-  //   // 计算拼图的实际位置，即滑块位置加上拼图初始位置
-  //   const puzzleX = captchaSliderPosition.value + captchaData.value.TitleWidth
-  //
-  //   const response = await verifyVerificationCode({
-  //     key: captchaKey.value,
-  //     x: puzzleX,
-  //     y: captchaData.value.TitleY, // 使用接口返回的Y坐标
-  //   })
-  //   if (response.code === 20000) {
-  //     // message.success('验证成功，正为你发送短信验证码...')
-  //     // captchaModal.value = false
-  //     // // 验证成功后，获取短信验证码
-  //     // await sendVerificationCode({
-  //     //   phone: codeForm.value.phone,
-  //     // })
-  //     // message.success('短信验证码已发送')
-  //     // startCountDown()
-  //   } else {
-  //     message.error('验证失败，请重试')
-  //     // 重置滑块位置
-  //     captchaSliderPosition.value = 0
-  //   }
-  // } catch (error) {
-  //   message.error('验证失败')
-  //   // 重置滑块位置
-  //   captchaSliderPosition.value = 0
-  // } finally {
-  //   captchaVerifying.value = false
-  // }
+  try {
+    // 计算拼图的实际位置，即滑块位置加上拼图初始位置
+    const puzzleX = captchaSliderPosition.value + captchaData.value.TitleWidth
+
+    // 准备请求参数
+    const params = {
+      key: captchaKey.value,
+      x: puzzleX,
+      y: captchaData.value.TitleY // 使用接口返回的Y坐标
+    }
+
+    // 发送验证请求
+    const response = await postUserCaptchaSlideVerify(params)
+
+    if (response.code === 20000 && response.data) {
+      // 保存ticket凭证到localStorage
+      const { ticket, expire } = response.data
+      if (ticket) {
+        localStorage.setItem('captchaTicket', ticket)
+        // 如果有过期时间，设置过期时间
+        if (expire) {
+          const expireTime = new Date().getTime() + expire * 1000
+          localStorage.setItem('captchaTicketExpire', expireTime.toString())
+        }
+      }
+      message.success('验证成功，正为你发送短信验证码...')
+      captchaModal.value = false
+      // 验证成功后，获取短信验证码
+      // 这里暂时注释掉，因为sendVerificationCode函数还没有定义
+      // await sendVerificationCode({
+      //   phone: codeForm.value.phone,
+      // })
+      // message.success('短信验证码已发送')
+      // startCountDown()
+    } else {
+      message.error('验证失败，请重试')
+      // 重置滑块位置
+      captchaSliderPosition.value = 0
+    }
+  } catch (error) {
+    message.error('验证失败')
+    // 重置滑块位置
+    captchaSliderPosition.value = 0
+  } finally {
+    captchaVerifying.value = false
+  }
 }
 
 // 自动校验滑块位置
@@ -272,7 +288,7 @@ const handleGlobalMouseUp = () => {
   requestAnimationFrame(() => {
     setTimeout(() => {
       handleVerifyCaptcha()
-    }, 500)
+    }, 1000) // 延迟1秒发送校验请求
   })
 }
 

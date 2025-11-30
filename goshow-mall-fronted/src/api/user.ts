@@ -9,3 +9,18 @@ export async function getUserCaptchaSlide(options?: { [key: string]: any }) {
     ...(options || {}),
   })
 }
+
+/** 验证滑块验证码 POST /api/user/captcha/slide/verify */
+export async function postUserCaptchaSlideVerify(
+  body: API.SlideCaptchaCheckDto,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultVoSlideCaptchaCheckVo>('/api/user/captcha/slide/verify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}

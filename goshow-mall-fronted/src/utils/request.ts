@@ -11,7 +11,30 @@ const myAxios = axios.create({
 // 全局请求拦截器
 myAxios.interceptors.request.use(
   function (config) {
-    // Do something before request is sent
+    // 从localStorage获取captcha ticket
+    const ticket = localStorage.getItem('captchaTicket')
+    const expireStr = localStorage.getItem('captchaTicketExpire')
+    
+    // 检查ticket是否存在且未过期
+    if (ticket) {
+      if (expireStr) {
+        const expireTime = parseInt(expireStr, 10)
+        const currentTime = new Date().getTime()
+        
+        // 如果ticket未过期，添加到请求头
+        if (currentTime < expireTime) {
+          config.headers['Captcha-Ticket'] = ticket
+        } else {
+          // 如果过期，清除localStorage中的数据
+          localStorage.removeItem('captchaTicket')
+          localStorage.removeItem('captchaTicketExpire')
+        }
+      } else {
+        // 如果没有过期时间，直接添加到请求头
+        config.headers['Captcha-Ticket'] = ticket
+      }
+    }
+    
     return config
   },
   function (error) {

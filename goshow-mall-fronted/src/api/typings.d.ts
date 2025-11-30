@@ -13,10 +13,27 @@ declare namespace API {
     status: number
   }
 
+  type ResultVoSlideCaptchaCheckVo = {
+    code?: number
+    data?: SlideCaptchaCheckVo
+    msg?: string
+  }
+
   type ResultVoSlideCaptchaVo = {
     code?: number
     data?: SlideCaptchaVo
     msg?: string
+  }
+
+  type SlideCaptchaCheckDto = {
+    key?: string
+    slideX?: number
+    slideY?: number
+  }
+
+  type SlideCaptchaCheckVo = {
+    expire?: number
+    ticket?: string
   }
 
   type SlideCaptchaVo = {
