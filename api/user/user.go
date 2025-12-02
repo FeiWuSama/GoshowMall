@@ -157,7 +157,7 @@ func (c *Ctrl) VerifySlideCaptcha(ctx *gin.Context) {
 // @param userMobileLoginDto body dto.UserMobilePasswordLoginDto true "手机号登录信息"
 // @Success 200 {object} result.Result[*vo.UserVo]
 // @host localhost:8080
-// @Router /api/user/mobile/login [post]
+// @Router /api/user/mobile/login/password [post]
 func (c *Ctrl) MobileLoginByPassword(ctx *gin.Context) {
 	userMobileLoginDto := &dto.UserMobilePasswordLoginDto{}
 	if err := ctx.ShouldBindJSON(userMobileLoginDto); err != nil {
