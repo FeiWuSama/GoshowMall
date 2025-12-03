@@ -5,9 +5,11 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"workspace-goshow-mall/adaptor"
+	"workspace-goshow-mall/adaptor/repo/dto"
 	"workspace-goshow-mall/adaptor/repo/model"
 	"workspace-goshow-mall/adaptor/repo/query"
 	"workspace-goshow-mall/result"
+	"workspace-goshow-mall/utils/sha256"
 )
 
 func NewUserDao(adaptor adaptor.Adaptor) *UserDao {
@@ -22,9 +24,10 @@ type UserDao struct {
 	redisClient *redis.Client
 }
 
-func (u UserDao) GetUserByMobile(ctx context.Context) (*model.User, error) {
+func (u UserDao) GetUserByMobile(ctx context.Context, loginDto *dto.UserMobilePasswordLoginDto) (*model.User, error) {
+	mobileSha256 := sha256.NewSHA256Crypto().HashToBase64(loginDto.Mobile)
 	qs1 := query.Use(u.db).MobileUser
-	mobileUser, err := qs1.WithContext(ctx).Where(qs1.MobileAes.Eq("")).First()
+	mobileUser, err := qs1.WithContext(ctx).Where(qs1.MobileSha256.Eq(mobileSha256)).First()
 	if err != nil {
 		return nil, err
 	}

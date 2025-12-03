@@ -119,7 +119,7 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 	}
 	userRoute := root.Group("/user", UserAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*vo.UserVo, error) {
 		return r.user.GetUserVo(c, r.adaptor, token)
-	}, r.adaptor))
+	}))
 	{
 		userRoute.GET("/captcha/slide", r.user.GetSlideCaptcha)
 		userRoute.POST("captcha/slide/verify", r.user.VerifySlideCaptcha)

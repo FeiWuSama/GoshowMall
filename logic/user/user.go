@@ -28,7 +28,7 @@ func (s Service) SMobileLogin(context context.Context, userMobileLoginDto interf
 	var user *model.User
 	var err error
 	switch userMobileLoginDto.(type) {
-	case dto.UserMobilePasswordLoginDto:
+	case *dto.UserMobilePasswordLoginDto:
 		user, err = s.getUserByPassword(context, userMobileLoginDto.(*dto.UserMobilePasswordLoginDto))
 		if err != nil {
 			return nil, err
@@ -61,14 +61,14 @@ func (s Service) getUserByPassword(context context.Context, loginDto *dto.UserMo
 		return nil, err
 	}
 	if count > constants.PasswordErrorCount {
-		return nil, result.NewBusinessErrorWithMsg(result.ParamError, fmt.Sprintf("密码错误次数过多,请在%d分钟后重试", count))
+		return nil, result.NewBusinessErrorWithMsg(result.ParamError, fmt.Sprintf("密码错误次数过多,请在%d分钟后重试", constants.PasswordErrorCount))
 	}
-	user, err := s.userMapper.GetUserByMobile(context)
+	user, err := s.userMapper.GetUserByMobile(context, loginDto)
 	if err != nil {
 		logger.Error("not found user error", zap.Error(err))
-		return nil, err
+		return nil, result.NewBusinessErrorWithMsg(result.ParamError, "手机号或密码错误")
 	}
-	if !md5.MD5Verify(user.Password, loginDto.Password) || user.Status == constants.UserBanStatus {
+	if !md5.MD5Verify(loginDto.Password, user.Password) || user.Status == constants.UserBanStatus {
 		logger.Error("password error")
 		return nil, result.NewBusinessErrorWithMsg(result.ParamError, "手机号或密码错误")
 	}
