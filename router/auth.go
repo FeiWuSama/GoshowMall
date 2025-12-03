@@ -14,7 +14,7 @@ import (
 type TokenFunc func(c context.Context, token string) (*vo.UserVo, error)
 type AdminTokenFunc func(c context.Context, token string) (*vo.UserVo, error)
 
-func UserAuthMiddleware(filter func(ctx *gin.Context) bool, tokenFunc TokenFunc, adaptor *adaptor.Adaptor) gin.HandlerFunc {
+func UserAuthMiddleware(filter func(ctx *gin.Context) bool, tokenFunc TokenFunc) gin.HandlerFunc {
 	return func(context *gin.Context) {
 		if filter != nil && !filter(context) {
 			context.Next()
@@ -24,11 +24,13 @@ func UserAuthMiddleware(filter func(ctx *gin.Context) bool, tokenFunc TokenFunc,
 		token := context.GetHeader(constants.UserToken)
 		if len(token) == 0 {
 			result.NewResultWithError(context, nil, result.NewBusinessError(result.Unauthorized))
+			context.Abort()
 			return
 		}
 		_, err := tokenFunc(context, token)
 		if err != nil {
 			result.NewResultWithError(context, nil, result.NewBusinessError(result.PermissionDenied))
+			context.Abort()
 			return
 		}
 		if err != nil {
