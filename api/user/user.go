@@ -111,7 +111,7 @@ func (c *Ctrl) VerifySlideCaptcha(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	captchaData, err := c.verify.GetCaptcha(ctx.Request.Context(), constants.SlideCaptchaKey+slideCaptchaCheckDto.Key)
+	captchaData, err := c.verify.GetCaptcha(ctx.Request.Context(), slideCaptchaCheckDto.Key)
 	if err != nil {
 		result.NewResultWithError(ctx, nil, result.NewBusinessErrorWithMsg(result.ParamError, "验证码已过期"))
 		ctx.Abort()
@@ -125,7 +125,7 @@ func (c *Ctrl) VerifySlideCaptcha(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	validate := slide.Validate(slideCaptchaCheckDto.SlideX, slideCaptchaCheckDto.SlideY, dot.DX, dot.DY, 5)
+	validate := slide.Validate(slideCaptchaCheckDto.SlideX, slideCaptchaCheckDto.SlideY, dot.X, dot.Y, 5)
 	if !validate {
 		result.NewResultWithError(ctx, nil, result.NewBusinessErrorWithMsg(result.ParamError, "验证码错误"))
 		ctx.Abort()
@@ -157,7 +157,7 @@ func (c *Ctrl) VerifySlideCaptcha(ctx *gin.Context) {
 // @Accept json
 // @Produce json
 // @param userMobileLoginDto body dto.UserMobilePasswordLoginDto true "手机号登录信息"
-// @Success 200 {object} result.Result[*vo.UserVo]
+// @Success 200 {object} result.Result[vo.UserVo]
 // @host localhost:8080
 // @Router /api/user/mobile/login/password [post]
 func (c *Ctrl) MobileLoginByPassword(ctx *gin.Context) {
@@ -167,6 +167,7 @@ func (c *Ctrl) MobileLoginByPassword(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+	userMobileLoginDto.Ticket = ctx.Request.Header.Get("captcha-ticket")
 	userVo, err := c.userService.SMobileLogin(ctx.Request.Context(), userMobileLoginDto)
 	if err != nil {
 		if errors.As(err, &result.BusinessError{}) {
