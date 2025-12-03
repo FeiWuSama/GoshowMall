@@ -14,13 +14,12 @@ myAxios.interceptors.request.use(
     // 从localStorage获取captcha ticket
     const ticket = localStorage.getItem('captchaTicket')
     const expireStr = localStorage.getItem('captchaTicketExpire')
-    
     // 检查ticket是否存在且未过期
     if (ticket) {
       if (expireStr) {
         const expireTime = parseInt(expireStr, 10)
         const currentTime = new Date().getTime()
-        
+
         // 如果ticket未过期，添加到请求头
         if (currentTime < expireTime) {
           config.headers['Captcha-Ticket'] = ticket
@@ -34,7 +33,7 @@ myAxios.interceptors.request.use(
         config.headers['Captcha-Ticket'] = ticket
       }
     }
-    
+
     return config
   },
   function (error) {

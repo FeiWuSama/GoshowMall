@@ -2,7 +2,8 @@
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { Form, Input, Button, Tabs, Space, message, Modal } from 'ant-design-vue'
 import { UserOutlined, LockOutlined, PhoneOutlined, QrcodeOutlined } from '@ant-design/icons-vue'
-import { getUserCaptchaSlide, postUserCaptchaSlideVerify } from '@/api/user.ts'
+import { getUserCaptchaSlide, postUserCaptchaSlideVerify, postUserMobileLoginPassword } from '@/api/user.ts'
+import { useAuthStore } from '@/stores/auth.ts'
 
 interface Props {
   visible: boolean
@@ -15,11 +16,17 @@ const emit = defineEmits<{
   'login-success': [token: string]
 }>()
 
-// 账号密码登录
+// 获取auth store
+const authStore = useAuthStore()
+
+// 手机号密码登录
 const accountForm = ref({
-  username: '',
+  mobile: '',
   password: '',
 })
+
+// 是否正在进行滑块验证码验证
+const isCaptchaRequired = ref(false)
 
 // 验证码登录
 const codeForm = ref({
@@ -39,8 +46,6 @@ const captchaSliderPosition = ref(0)
 const isDragging = ref(false)
 const captchaVerifying = ref(false)
 const sliderContainer = ref<HTMLElement | null>(null)
-const captchaImageRef = ref<HTMLImageElement | null>(null)
-const yScaleRatio = ref(1) // Y轴缩放比例
 
 // 关闭弹窗
 const handleClose = () => {
@@ -50,35 +55,82 @@ const handleClose = () => {
 
 // 重置表单
 const resetForms = () => {
-  accountForm.value = { username: '', password: '' }
+  accountForm.value = { mobile: '', password: '' }
   codeForm.value = { phone: '', code: '' }
   activeTab.value = 'account'
   countDown.value = 0
 }
 
-// 账号密码登录
+// 检查是否为手机号
+const isPhoneNumber = (value: string): boolean => {
+  const phoneRegex = /^1[3-9]\d{9}$/
+  return phoneRegex.test(value)
+}
+
+// 手机号密码登录
 const handleAccountLogin = async () => {
-  if (!accountForm.value.username || !accountForm.value.password) {
-    message.error('请填写用户名和密码')
+  if (!accountForm.value.mobile || !accountForm.value.password) {
+    message.error('请填写手机号和密码')
     return
   }
 
+  // 检查是否为手机号登录
+  if (!isPhoneNumber(accountForm.value.mobile)) {
+    message.error('请输入正确的手机号')
+    return
+  }
+
+  // 如果是手机号，先获取滑块验证码
+  try {
+    const result = await getUserCaptchaSlide()
+    if (result.code === 20000 && result.data) {
+      captchaData.value = result.data
+      captchaKey.value = result.data.key
+      captchaSliderPosition.value = 0 // 初始位置设置为0
+      captchaModal.value = true // 打开滑块验证码弹窗
+      isCaptchaRequired.value = true // 标记需要验证码验证
+    } else {
+      message.error('获取验证码失败')
+    }
+  } catch (error) {
+    message.error('获取验证码失败')
+  }
+}
+
+// 执行登录请求
+const performLogin = async () => {
   isLoading.value = true
-  // try {
-  //   const response = await loginByAccount({
-  //     username: accountForm.value.username,
-  //     password: accountForm.value.password,
-  //   })
-  //   message.success('登录成功')
-  //   console.log('登录响应:', response)
-  //   // TODO: 保存token，触发登录成功事件
-  //   emit('login-success', 'token')
-  //   handleClose()
-  // } catch (error) {
-  //   message.error('登录失败')
-  // } finally {
-  //   isLoading.value = false
-  // }
+  try {
+    // 手机号登录
+    const response = await postUserMobileLoginPassword({
+      mobile: accountForm.value.mobile,
+      password: accountForm.value.password,
+    })
+    if (response.code === 20000 && response.data) {
+      message.success('登录成功')
+      console.log('登录响应:', response)
+
+      // 保存用户信息到pinia store
+      authStore.loginSuccess({
+        id: response.data.id,
+        phone: response.data.phone,
+        nickname: response.data.nickname,
+        avatar: response.data.avatar,
+        token: response.data.token,
+        ...response.data
+      })
+
+      // 触发登录成功事件
+      emit('login-success', response.data.token)
+      handleClose()
+    } else {
+      message.error(response.msg || '登录失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '登录失败')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // 获取验证码
@@ -133,18 +185,14 @@ const handleVerifyCaptcha = async () => {
   captchaVerifying.value = true
   try {
     // 计算拼图的实际位置，即滑块位置加上拼图初始位置
-    const puzzleX = captchaSliderPosition.value + captchaData.value.TitleWidth
-
-    // 准备请求参数
-    const params = {
-      key: captchaKey.value,
-      x: puzzleX,
-      y: captchaData.value.TitleY // 使用接口返回的Y坐标
-    }
+    const puzzleX = captchaSliderPosition.value
 
     // 发送验证请求
-    const response = await postUserCaptchaSlideVerify(params)
-
+    const response = await postUserCaptchaSlideVerify({
+      key: captchaKey.value,
+      slideX: Math.round(puzzleX),
+      slideY: Math.round(captchaData.value.TitleY) // 使用接口返回的Y坐标
+    })
     if (response.code === 20000 && response.data) {
       // 保存ticket凭证到localStorage
       const { ticket, expire } = response.data
@@ -152,30 +200,54 @@ const handleVerifyCaptcha = async () => {
         localStorage.setItem('captchaTicket', ticket)
         // 如果有过期时间，设置过期时间
         if (expire) {
-          const expireTime = new Date().getTime() + expire * 1000
+          const expireTime = new Date().getTime() + expire * 60 * 1000
           localStorage.setItem('captchaTicketExpire', expireTime.toString())
         }
       }
-      message.success('验证成功，正为你发送短信验证码...')
-      captchaModal.value = false
-      // 验证成功后，获取短信验证码
-      // 这里暂时注释掉，因为sendVerificationCode函数还没有定义
-      // await sendVerificationCode({
-      //   phone: codeForm.value.phone,
-      // })
-      // message.success('短信验证码已发送')
-      // startCountDown()
+
+      // 检查是否是为了登录而进行的验证
+      if (isCaptchaRequired.value) {
+        captchaModal.value = false
+        // 验证码验证成功后，发送登录请求
+        await performLogin()
+        // 重置验证码验证标记
+        isCaptchaRequired.value = false
+      } else {
+        captchaModal.value = false
+      }
     } else {
-      message.error('验证失败，请重试')
+      message.error('验证失败')
       // 重置滑块位置
       captchaSliderPosition.value = 0
+      // 重新获取滑块验证码
+      await fetchNewCaptcha()
     }
   } catch (error) {
     message.error('验证失败')
     // 重置滑块位置
     captchaSliderPosition.value = 0
+    // 重新获取滑块验证码
+    await fetchNewCaptcha()
   } finally {
     captchaVerifying.value = false
+  }
+}
+
+// 重新获取滑块验证码
+const fetchNewCaptcha = async () => {
+  try {
+    const result = await getUserCaptchaSlide()
+    if (result.code === 20000 && result.data) {
+      captchaData.value = result.data
+      captchaKey.value = result.data.key
+      captchaSliderPosition.value = 0 // 初始位置设置为0
+    } else {
+      message.error('获取验证码失败，请稍后重试')
+      captchaModal.value = false
+    }
+  } catch (error) {
+    message.error('获取验证码失败，请稍后重试')
+    captchaModal.value = false
   }
 }
 
@@ -417,20 +489,20 @@ watch(
       <p class="login-subtitle">欢迎登录</p>
 
       <Tabs v-model:activeKey="activeTab" animated class="login-tabs" size="small">
-        <Tabs.TabPane key="account" tab="账号登录">
-          <Form layout="vertical" @finish="handleAccountLogin">
-            <Form.Item label="用户名" required>
-              <Input
-                v-model:value="accountForm.username"
-                placeholder="请输入用户名或邮箱"
-                size="large"
-                allow-clear
-              >
-                <template #prefix>
-                  <UserOutlined />
-                </template>
-              </Input>
-            </Form.Item>
+        <Tabs.TabPane key="account" tab="手机号登录">
+            <Form layout="vertical">
+              <Form.Item label="手机号" required>
+                <Input
+                  v-model:value="accountForm.mobile"
+                  placeholder="请输入手机号"
+                  size="large"
+                  allow-clear
+                >
+                  <template #prefix>
+                    <PhoneOutlined />
+                  </template>
+                </Input>
+              </Form.Item>
 
             <Form.Item label="密码" required>
               <Input.Password
@@ -445,7 +517,7 @@ watch(
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" html-type="submit" size="large" block :loading="isLoading">
+              <Button type="primary" size="large" block :loading="isLoading" @click="handleAccountLogin">
                 登录
               </Button>
             </Form.Item>
@@ -454,7 +526,7 @@ watch(
 
         <!-- 验证码登录 -->
         <Tabs.TabPane key="code" tab="验证码登录">
-          <Form layout="vertical" @finish="handleCodeLogin">
+          <Form layout="vertical">
             <Form.Item label="手机号" required>
               <Input
                 v-model:value="codeForm.phone"
@@ -489,7 +561,7 @@ watch(
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" html-type="submit" size="large" block :loading="isLoading">
+              <Button type="primary" size="large" block :loading="isLoading" @click="handleCodeLogin">
                 登录
               </Button>
             </Form.Item>

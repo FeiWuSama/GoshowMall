@@ -24,3 +24,18 @@ export async function postUserCaptchaSlideVerify(
     ...(options || {}),
   })
 }
+
+/** 手机号登录 POST /api/user/mobile/login/password */
+export async function postUserMobileLoginPassword(
+  body: API.UserMobilePasswordLoginDto,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultVoUserVo>('/api/user/mobile/login/password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}

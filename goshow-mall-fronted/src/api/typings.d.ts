@@ -25,6 +25,12 @@ declare namespace API {
     msg?: string
   }
 
+  type ResultVoUserVo = {
+    code?: number
+    data?: UserVo
+    msg?: string
+  }
+
   type SlideCaptchaCheckDto = {
     key?: string
     slideX?: number
@@ -52,5 +58,19 @@ declare namespace API {
     nickname?: string
     sex?: number
     username?: string
+  }
+
+  type UserMobilePasswordLoginDto = {
+    mobile?: string
+    password?: string
+    ticket?: string
+  }
+
+  type UserVo = {
+    Nickname?: string
+    avatar?: string
+    id?: number
+    sex?: number
+    token?: string
   }
 }
