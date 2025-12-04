@@ -180,3 +180,22 @@ func (c *Ctrl) MobileLoginByPassword(ctx *gin.Context) {
 	}
 	result.NewResultWithOk[vo.UserVo](ctx, *userVo)
 }
+
+// GetUserInfo
+// @Summary 获取用户信息
+// @Tags user
+// @Accept json
+// @Produce json
+// @Success 200 {object} result.Result[vo.UserVo]
+// @host localhost:8080
+// @Router /api/user/info [get]
+func (c *Ctrl) GetUserInfo(ctx *gin.Context) {
+	userVo, err := c.GetUserVo(ctx.Request.Context(), c.adaptor, ctx.Request.Header.Get(constants.UserToken))
+	if err != nil {
+		logger.Error("get user info error", zap.Error(err))
+		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
+		ctx.Abort()
+		return
+	}
+	result.NewResultWithOk[vo.UserVo](ctx, *userVo)
+}
