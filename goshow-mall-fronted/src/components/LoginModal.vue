@@ -158,8 +158,9 @@ const handleGetCode = async () => {
 
 // 验证码登录
 const handleCodeLogin = async () => {
-  if (!codeForm.value.phone || !codeForm.value.code) {
-    message.error('请填写手机号和验证码')
+  // 检查是否为手机号登录
+  if (!isPhoneNumber(accountForm.value.mobile)) {
+    message.error('请输入正确的手机号')
     return
   }
 
