@@ -14,22 +14,31 @@ import (
 	"workspace-goshow-mall/constants"
 	"workspace-goshow-mall/mapper"
 	"workspace-goshow-mall/result"
+	"workspace-goshow-mall/rpc"
+	"workspace-goshow-mall/service"
 	"workspace-goshow-mall/utils/logger"
 	"workspace-goshow-mall/utils/md5"
 )
 
 type Service struct {
-	adapter    *adaptor.Adaptor
-	userMapper mapper.UserMapper
-	verify     *myRedis.Verify
+	adapter     *adaptor.Adaptor
+	userMapper  mapper.UserMapper
+	verify      *myRedis.Verify
+	larkService service.ILarkService
+	larkRpc     *rpc.LarkRpc
 }
 
-func (s Service) SMobileLogin(context context.Context, userMobileLoginDto interface{}) (*vo.UserVo, error) {
+func (s Service) SLogin(context context.Context, userMobileLoginDto interface{}) (*vo.UserVo, error) {
 	var user *model.User
 	var err error
 	switch userMobileLoginDto.(type) {
 	case *dto.UserMobilePasswordLoginDto:
 		user, err = s.getUserByPassword(context, userMobileLoginDto.(*dto.UserMobilePasswordLoginDto))
+		if err != nil {
+			return nil, err
+		}
+	case *dto.UserLarkLoginDto:
+		user, err = s.getUserByLark(context, userMobileLoginDto.(*dto.UserLarkLoginDto))
 		if err != nil {
 			return nil, err
 		}
@@ -73,5 +82,27 @@ func (s Service) getUserByPassword(context context.Context, loginDto *dto.UserMo
 		return nil, result.NewBusinessErrorWithMsg(result.ParamError, "手机号或密码错误")
 	}
 	_ = s.verify.DeletePasswordErrorCount(context, loginDto.Mobile)
+	return user, nil
+}
+
+func (s Service) getUserByLark(ctx context.Context, dto *dto.UserLarkLoginDto) (*model.User, error) {
+	accessTokenVo, err := s.larkService.SLarkGetToken(ctx, dto.AppCode, dto.Code, dto.RedirectUri, "")
+	if err != nil {
+		logger.Error("get lark user access token err", zap.Error(err))
+		return nil, err
+	}
+	larkUserInfo, err := s.larkRpc.GetLarkUserInfo(ctx, accessTokenVo.AccessToken)
+	if err != nil {
+		logger.Error("get lark user info err", zap.Error(err))
+		return nil, err
+	}
+	user, err := s.userMapper.GetUserByOpenIdAndCode(ctx, larkUserInfo.OpenId, dto.AppCode)
+	if err != nil {
+		logger.Error("get user by open id and code error", zap.Error(err))
+		return nil, err
+	}
+	if user.Status == constants.UserBanStatus {
+		return nil, result.NewBusinessErrorWithMsg(result.ParamError, "飞书登录失败")
+	}
 	return user, nil
 }

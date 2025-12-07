@@ -6,5 +6,5 @@ import (
 )
 
 type IUserService interface {
-	SMobileLogin(context context.Context, dto interface{}) (*vo.UserVo, error)
+	SLogin(context context.Context, dto interface{}) (*vo.UserVo, error)
 }

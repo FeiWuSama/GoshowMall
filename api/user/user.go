@@ -168,7 +168,7 @@ func (c *Ctrl) MobileLoginByPassword(ctx *gin.Context) {
 		return
 	}
 	userMobileLoginDto.Ticket = ctx.Request.Header.Get("captcha-ticket")
-	userVo, err := c.userService.SMobileLogin(ctx.Request.Context(), userMobileLoginDto)
+	userVo, err := c.userService.SLogin(ctx.Request.Context(), userMobileLoginDto)
 	if err != nil {
 		if errors.As(err, &result.BusinessError{}) {
 			result.NewResultWithError(ctx, nil, err.(*result.BusinessError))
@@ -194,6 +194,35 @@ func (c *Ctrl) GetUserInfo(ctx *gin.Context) {
 	if err != nil {
 		logger.Error("get user info error", zap.Error(err))
 		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
+		ctx.Abort()
+		return
+	}
+	result.NewResultWithOk[vo.UserVo](ctx, *userVo)
+}
+
+// LoginByLark
+// @Summary 飞书登录
+// @Tags user
+// @Accept json
+// @Produce json
+// @param UserLarkLoginDto body dto.UserLarkLoginDto true "飞书登录信息"
+// @Success 200 {object} result.Result[vo.UserVo]
+// @host localhost:8080
+// @Router /api/user/lark/login [post]
+func (c *Ctrl) LoginByLark(ctx *gin.Context) {
+	userLarkLoginDto := &dto.UserLarkLoginDto{}
+	if err := ctx.ShouldBindJSON(userLarkLoginDto); err != nil {
+		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ParamError))
+		ctx.Abort()
+		return
+	}
+	userVo, err := c.userService.SLogin(ctx.Request.Context(), userLarkLoginDto)
+	if err != nil {
+		if errors.As(err, &result.BusinessError{}) {
+			result.NewResultWithError(ctx, nil, err.(*result.BusinessError))
+		} else {
+			result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
+		}
 		ctx.Abort()
 		return
 	}

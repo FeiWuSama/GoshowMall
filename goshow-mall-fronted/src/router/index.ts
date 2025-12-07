@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 // @ts-ignore
 import HomeView from '@/pages/HomeView.vue'
+// @ts-ignore
 import AboutView from '@/pages/AboutView.vue'
 
 // @ts-ignore

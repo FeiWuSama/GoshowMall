@@ -12,10 +12,12 @@ const (
 	CaptchaTicketKey = "goshow:ticket:"
 	PasswordErrorKey = "goshow:error:password:"
 
-	TokenExpire         = 60 * 60 * 24 * 3
-	CaptchaExpire       = 60 * 5
+	TokenExpire   = 60 * 60 * 24 * 3
+	CaptchaExpire = 60 * 5
+
 	CaptchaTicketExpire = 60
 	PasswordErrorExpire = 10
+	LockerExpire        = 5
 )
 
 const (

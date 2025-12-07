@@ -21,3 +21,10 @@ redis:
   db: 0
   max_open: 10
   max_idle: 2
+
+app_config: #app配置
+  1002: #app配置对象的id
+    app_type: #app唯一编号
+    app_name: #app名
+    app_id: #appid
+    app_secret: #app密钥

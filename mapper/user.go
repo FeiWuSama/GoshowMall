@@ -8,4 +8,5 @@ import (
 
 type UserMapper interface {
 	GetUserByMobile(ctx context.Context, loginDto *dto.UserMobilePasswordLoginDto) (*model.User, error)
+	GetUserByOpenIdAndCode(ctx context.Context, id string, code int32) (*model.User, error)
 }
