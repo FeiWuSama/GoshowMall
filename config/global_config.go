@@ -54,7 +54,6 @@ type AppConfig struct {
 
 func init() {
 	flag.StringVar(&configPath, "c", "application.yml", "default config path")
-	flag.StringVar(&configPath, "c", "application-local.yml", "default config path")
 }
 
 func InitConfig() Config {
