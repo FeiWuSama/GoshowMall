@@ -21,8 +21,8 @@ type LarkUserVo struct {
 	EnterpriseEmail string `json:"enterprise_email"`
 	UserId          string `json:"user_id"`
 	Mobile          string `json:"mobile"`
-	TenantId        string `json:"tenant_id"`
-	EmployeeId      string `json:"employee_id"`
+	TenantKey       string `json:"tenant_key"`
+	EmployeeNo      string `json:"employee_no"`
 }
 
 type LarkAccessTokenVo struct {
