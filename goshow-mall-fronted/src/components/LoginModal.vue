@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted, watch, nextTick, onUnmounted } from 'vue'
 import { Form, Input, Button, Tabs, Space, message, Modal } from 'ant-design-vue'
-import { UserOutlined, LockOutlined, PhoneOutlined, QrcodeOutlined } from '@ant-design/icons-vue'
-import { getUserCaptchaSlide, postUserCaptchaSlideVerify, postUserMobileLoginPassword } from '@/api/user.ts'
+import { LockOutlined, PhoneOutlined } from '@ant-design/icons-vue'
+import {
+  getUserCaptchaSlide,
+  postUserCaptchaSlideVerify,
+  postUserMobileLoginPassword,
+} from '@/api/user.ts'
 import { useAuthStore } from '@/stores/auth.ts'
 
 interface Props {
@@ -117,7 +121,7 @@ const performLogin = async () => {
         nickname: response.data.nickname,
         avatar: response.data.avatar,
         token: response.data.token,
-        ...response.data
+        ...response.data,
       })
 
       // 触发登录成功事件
@@ -192,7 +196,7 @@ const handleVerifyCaptcha = async () => {
     const response = await postUserCaptchaSlideVerify({
       key: captchaKey.value,
       slideX: Math.round(puzzleX),
-      slideY: Math.round(captchaData.value.TitleY) // 使用接口返回的Y坐标
+      slideY: Math.round(captchaData.value.TitleY), // 使用接口返回的Y坐标
     })
     if (response.code === 20000 && response.data) {
       // 保存ticket凭证到localStorage
@@ -252,20 +256,6 @@ const fetchNewCaptcha = async () => {
   }
 }
 
-// 自动校验滑块位置
-const checkSliderPosition = () => {
-  if (!captchaData.value) return
-
-  // 计算拼图的实际位置，即滑块位置加上拼图初始位置
-  const puzzleX = captchaSliderPosition.value + captchaData.value.TitleWidth
-  // 目标位置是缺口位置
-  const targetX = captchaData.value.TitleX
-  const tolerance = 5 // 允许的误差范围
-
-  // 如果拼图位置与目标位置接近，返回true表示可以验证
-  return Math.abs(puzzleX - targetX) <= tolerance
-}
-
 // 关闭slider验证码弹窗
 const handleCloseCaptchaModal = () => {
   captchaModal.value = false
@@ -299,7 +289,7 @@ const cacheContainerInfo = () => {
   const rect = sliderContainer.value.getBoundingClientRect()
   containerInfo = {
     width: rect.width,
-    left: rect.left
+    left: rect.left,
   }
 }
 
@@ -365,26 +355,140 @@ const handleGlobalMouseUp = () => {
   })
 }
 
-// 飞书扫码登录
-const handleFeishuLogin = async () => {
-  // try {
-  //   const response = await getFeishuLoginUrl()
-  //   console.log('飞书登录URL:', response)
-  //   message.info('飞书扫码登录准备完毕...')
-  // } catch (error) {
-  //   message.error('获取飞书登录地址失败')
-  // }
+// 飞书扫码登录相关状态
+const feishuLoginState = ref({
+  isLoading: false,
+  hasQrCode: false,
+  sdkLoaded: false,
+  showAuthIframe: false // 控制是否显示授权iframe
+})
+
+// 保存飞书QRLogin实例引用和goto地址
+let qrLoginInstance:any = null
+let qrLoginGoto:string = ''
+
+// 为window添加QRLogin类型定义
+declare global {
+  interface Window {
+    QRLogin: any
+  }
 }
 
-// 开始倒计时
-const startCountDown = () => {
-  countDown.value = 60
-  const timer = setInterval(() => {
-    countDown.value--
-    if (countDown.value <= 0) {
-      clearInterval(timer)
+// 动态加载飞书二维码 SDK 脚本
+const loadFeishuQRSDK = async () => {
+  if (feishuLoginState.value.sdkLoaded) {
+    initQRLogin()
+    return
+  }
+
+  return new Promise<void>((resolve) => {
+    const script = document.createElement('script')
+    script.src = 'https://lf-package-cn.feishucdn.com/obj/feishu-static/lark/passport/qrcode/LarkSSOSDKWebQRCode-1.0.3.js'
+    script.onload = () => {
+      feishuLoginState.value.sdkLoaded = true
+      initQRLogin()
+      resolve()
     }
-  }, 1000)
+    document.body.appendChild(script)
+  })
+}
+
+// 初始化二维码登录实例
+const initQRLogin = () => {
+  // 检查容器是否存在
+  const container = document.getElementById('login_container')
+  if (!container) {
+    console.warn('飞书二维码容器不存在，无法初始化')
+    return
+  }
+
+  const clientId = 'cli_a9b81d3fcaf81bc1' // 替换为开发者后台的 App ID
+  // 修改重定向地址为我们新创建的授权页面
+  const redirectUri = encodeURIComponent(`${window.location.origin}/user/lark/auth`) // 需与开发者后台配置一致
+  const state = Math.random().toString(36).substr(2) // 随机字符串防 CSRF
+
+  // 清空容器内容，避免重复创建二维码实例
+  container.innerHTML = ''
+
+  // 构建goto地址并保存
+  qrLoginGoto = `https://passport.feishu.cn/suite/passport/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&state=${state}`
+
+  // 重置状态
+  feishuLoginState.value.showAuthIframe = false
+
+  // 创建 QRLogin 实例
+  qrLoginInstance = window.QRLogin({
+    id: 'login_container', // 二维码容器的 DOM ID
+    goto: qrLoginGoto,
+    width: '300',
+    height: '300',
+  })
+
+  // 确保只添加一个事件监听器
+  window.removeEventListener('message', handleFeishuMessage)
+  window.addEventListener('message', handleFeishuMessage)
+
+  // 添加iframe消息监听
+  window.removeEventListener('message', handleIframeMessage)
+  window.addEventListener('message', handleIframeMessage)
+
+  feishuLoginState.value.hasQrCode = true
+}
+
+// 飞书消息事件处理函数
+const handleFeishuMessage = (event) => {
+  // 检查事件数据是否有效
+  if (event.data && event.data.tmp_code && qrLoginGoto) {
+    // 验证事件来源和数据（如果实例存在）
+    if (qrLoginInstance && qrLoginInstance.matchOrigin && qrLoginInstance.matchData) {
+      if (!qrLoginInstance.matchOrigin(event.origin) || !qrLoginInstance.matchData(event.data)) {
+        return
+      }
+    }
+
+    const tmpCode = event.data.tmp_code
+    // 拼接 tmp_code 到 goto 地址，显示内嵌授权iframe
+    qrLoginGoto = `${qrLoginGoto}&tmp_code=${tmpCode}`
+    feishuLoginState.value.showAuthIframe = true
+  }
+}
+
+// 处理来自iframe的消息
+const handleIframeMessage = (event) => {
+  // 验证消息来源
+  if (event.origin !== window.location.origin) {
+    return
+  }
+
+  // 检查是否是登录成功消息
+  if (event.data && event.data.type === 'lark-login-success') {
+    // 登录成功，关闭登录弹窗
+    message.success('飞书登录成功')
+    setTimeout(() => {
+      handleClose()
+    },2000)
+  } else if (event.data && event.data.type === 'lark-login-failed') {
+    // 登录失败，显示错误信息
+    message.error(event.data.error || '飞书登录失败')
+    // 重置状态，显示二维码
+    feishuLoginState.value.showAuthIframe = false
+    // 重新生成二维码
+    setTimeout(() => {
+      handleFeishuQRLogin()
+    }, 1000)
+  }
+}
+
+// 获取飞书登录二维码
+const handleFeishuQRLogin = async () => {
+  feishuLoginState.value.isLoading = true
+  try {
+    await loadFeishuQRSDK()
+  } catch (error) {
+    message.error('获取二维码失败')
+  } finally {
+    feishuLoginState.value.isLoading = false
+  }
 }
 
 // 绘制波浪
@@ -461,6 +565,7 @@ const initWaveAnimation = async () => {
 
 onMounted(() => {
   initWaveAnimation()
+  // 移除这里的loadFeishuQRSDK调用，只在需要显示二维码时才加载
 })
 
 watch(
@@ -468,9 +573,54 @@ watch(
   (newVal) => {
     if (newVal) {
       initWaveAnimation()
+      // 弹窗打开时，如果当前是飞书登录标签，自动加载二维码
+      if (activeTab.value === 'feishu') {
+        // 延迟加载，确保DOM已渲染
+        setTimeout(() => {
+          handleFeishuQRLogin()
+        }, 100)
+      }
     }
   },
 )
+
+// 监听当前激活的标签页，如果切换到飞书登录且弹窗可见，则自动加载二维码
+watch(activeTab, (newTab) => {
+  if (newTab === 'feishu' && props.visible) {
+    // 延迟加载，确保DOM已渲染
+    setTimeout(() => {
+      handleFeishuQRLogin()
+    }, 100)
+  } else if (newTab !== 'feishu') {
+    // 切换到其他标签页时，清理二维码资源
+    window.removeEventListener('message', handleFeishuMessage)
+    window.removeEventListener('message', handleIframeMessage)
+    const container = document.getElementById('login_container')
+    if (container) {
+      container.innerHTML = ''
+    }
+    qrLoginInstance = null
+    qrLoginGoto = ''
+    feishuLoginState.value.showAuthIframe = false
+  }
+})
+
+// 组件卸载时清理资源
+onUnmounted(() => {
+  // 移除消息事件监听
+  window.removeEventListener('message', handleFeishuMessage)
+  window.removeEventListener('message', handleIframeMessage)
+
+  // 清空二维码容器
+  const container = document.getElementById('login_container')
+  if (container) {
+    container.innerHTML = ''
+  }
+
+  // 清理实例引用和goto地址
+  qrLoginInstance = null
+  qrLoginGoto = ''
+})
 </script>
 
 <template>
@@ -491,9 +641,9 @@ watch(
 
       <Tabs v-model:activeKey="activeTab" animated class="login-tabs" size="small">
         <Tabs.TabPane key="account" tab="手机号登录">
-            <Form layout="vertical">
-              <Form.Item label="手机号" required>
-                <Input
+          <Form layout="vertical">
+            <Form.Item label="手机号" required>
+              <Input
                   v-model:value="accountForm.mobile"
                   placeholder="请输入手机号"
                   size="large"
@@ -503,7 +653,7 @@ watch(
                     <PhoneOutlined />
                   </template>
                 </Input>
-              </Form.Item>
+            </Form.Item>
 
             <Form.Item label="密码" required>
               <Input.Password
@@ -518,7 +668,13 @@ watch(
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" size="large" block :loading="isLoading" @click="handleAccountLogin">
+              <Button
+                type="primary"
+                size="large"
+                block
+                :loading="isLoading"
+                @click="handleAccountLogin"
+              >
                 登录
               </Button>
             </Form.Item>
@@ -562,7 +718,13 @@ watch(
             </Form.Item>
 
             <Form.Item>
-              <Button type="primary" size="large" block :loading="isLoading" @click="handleCodeLogin">
+              <Button
+                type="primary"
+                size="large"
+                block
+                :loading="isLoading"
+                @click="handleCodeLogin"
+              >
                 登录
               </Button>
             </Form.Item>
@@ -572,19 +734,30 @@ watch(
         <!-- 飞书扫码登录 -->
         <Tabs.TabPane key="feishu" tab="飞书扫码">
           <div class="feishu-login-container">
-            <div class="qrcode-placeholder">
-              <QrcodeOutlined style="font-size: 48px; color: #1890ff" />
+            <!-- 二维码容器 -->
+            <div v-if="!feishuLoginState.showAuthIframe" style="text-align: center">
+              <div
+                id="login_container"
+                style="width: 250px; height: 250px; margin: 0 auto; display: flex; align-items: center; justify-content: center"
+              ></div>
+
+              <!-- 加载中状态 -->
+              <div v-if="feishuLoginState.isLoading" style="text-align: center; margin-top: 16px; color: #1890ff">
+                正在加载二维码...
+              </div>
             </div>
+
+            <!-- 授权iframe容器 -->
+            <div v-else class="feishu-auth-iframe-container">
+              <iframe
+                :src="qrLoginGoto"
+                class="feishu-auth-iframe"
+                frameborder="0"
+                allow="autoplay; fullscreen; clipboard-read; clipboard-write"
+              ></iframe>
+            </div>
+
             <p style="text-align: center; color: #666; margin-top: 16px">使用飞书扫描二维码登录</p>
-            <Button
-              type="primary"
-              size="large"
-              block
-              @click="handleFeishuLogin"
-              style="margin-top: 16px"
-            >
-              获取登录二维码
-            </Button>
           </div>
         </Tabs.TabPane>
       </Tabs>
@@ -612,11 +785,7 @@ watch(
       <!-- 滑块验证码图片 -->
       <div class="captcha-image-wrapper" v-if="captchaData">
         <!-- 背景图 -->
-        <img
-          :src="captchaData.ImageBase64"
-          alt="验证码"
-          class="captcha-image"
-        />
+        <img :src="captchaData.ImageBase64" alt="验证码" class="captcha-image" />
         <!-- 拼图 -->
         <img
           v-if="captchaData.TitleImageBase64"
@@ -768,6 +937,39 @@ watch(
   min-height: 300px;
 }
 
+/* 飞书二维码容器样式 */
+#login_container {
+  border: none !important;
+  width: 250px !important;
+  height: 250px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 使用深度选择器移除飞书SDK生成的二维码边框 */
+:deep(.qrcode-border) {
+  border: none !important;
+}
+
+:deep(iframe) {
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+:deep(img) {
+  border: none !important;
+  margin: 0 auto !important;
+}
+
+/* 确保飞书SDK生成的内容完全居中 */
+:deep(.qrcode-content) {
+  margin: 0 auto !important;
+  display: block !important;
+}
+
 .qrcode-placeholder {
   display: flex;
   align-items: center;
@@ -886,5 +1088,29 @@ watch(
 .slider-icon {
   font-size: 25px;
   color: #1890ff;
+}
+
+/* 飞书登录相关样式 */
+.feishu-login-container {
+  position: relative;
+  width: 100%;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.feishu-auth-iframe-container {
+  width: 100%;
+  height: 300px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.feishu-auth-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 </style>

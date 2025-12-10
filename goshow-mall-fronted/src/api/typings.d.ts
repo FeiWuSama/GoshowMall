@@ -60,6 +60,12 @@ declare namespace API {
     username?: string
   }
 
+  type UserLarkLoginDto = {
+    app_code?: number
+    code?: string
+    redirect_uri?: string
+  }
+
   type UserMobilePasswordLoginDto = {
     mobile?: string
     password?: string

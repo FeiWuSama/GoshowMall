@@ -3,9 +3,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/pages/HomeView.vue'
 // @ts-ignore
 import AboutView from '@/pages/AboutView.vue'
+// @ts-ignore
+import LarkAuth from '@/pages/user/LarkAuth.vue'
 
-// @ts-ignore
-// @ts-ignore
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -18,6 +18,11 @@ const router = createRouter({
       path: '/about',
       name: 'about',
       component: AboutView,
+    },
+    {
+      path: '/user/lark/auth',
+      name: 'lark-auth',
+      component: LarkAuth,
     },
   ],
 })
