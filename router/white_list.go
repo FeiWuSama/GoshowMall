@@ -7,4 +7,5 @@ var whiteList = map[string]bool{
 	"/user/captcha/slide":         true,
 	"/user/captcha/slide/verify":  true,
 	"/user/mobile/login/password": true,
+	"/user/lark/login":            true,
 }
