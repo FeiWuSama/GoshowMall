@@ -9,6 +9,7 @@ import (
 	"workspace-goshow-mall/adaptor"
 	"workspace-goshow-mall/adaptor/repo/vo"
 	"workspace-goshow-mall/config"
+	"workspace-goshow-mall/result"
 )
 
 type LarkRpc struct {
@@ -35,7 +36,16 @@ func (l *LarkRpc) GetLarkUserInfo(ctx context.Context, accessToken string) (*vo.
 	}
 	defer resp.Body.Close()
 	var larkUserVo vo.LarkUserVo
-	err = json.NewDecoder(resp.Body).Decode(&larkUserVo)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	respData := &result.Result[vo.LarkUserVo]{}
+	err = json.Unmarshal(respBody, respData)
+	if respData.Code != 0 {
+		return nil, result.NewBusinessErrorWithMsg(result.ServerError, string(respData.Msg))
+	}
+	larkUserVo = respData.Data
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +59,7 @@ func (l *LarkRpc) GetLarkUserAccessToken(ctx context.Context, appCode int32, cod
 		"client_id":     l.config.AppConfig[appCode].AppId,
 		"client_secret": l.config.AppConfig[appCode].AppSecret,
 		"code":          code,
-		"redirect_uri":  redirectUrl,
+		"redirect_uri":  "http://localhost:5174/user/lark/auth",
 		"scope":         scope,
 	}
 	bodyBytes, err := json.Marshal(body)
@@ -61,7 +71,7 @@ func (l *LarkRpc) GetLarkUserAccessToken(ctx context.Context, appCode int32, cod
 		return nil, err
 	}
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json; charset=utf-8")
+	request.Header.Set("Accept", "application/json")
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return nil, err
