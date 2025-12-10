@@ -39,7 +39,11 @@ const handleLarkAuth = async () => {
     }
 
     // 发送飞书登录请求
-    const response = await postUserLarkLogin({ code, state })
+    const response = await postUserLarkLogin({
+      code,
+      app_code: 1002,
+      redirect_uri: `${window.location.origin}/user/lark/auth`,
+    })
 
     if (response.code === 20000 && response.data) {
       // 登录成功，保存用户信息到Pinia
@@ -49,7 +53,7 @@ const handleLarkAuth = async () => {
         nickname: response.data.nickname,
         avatar: response.data.avatar,
         token: response.data.token,
-        ...response.data
+        ...response.data,
       })
 
       // 延迟1.5秒后显示登录成功
@@ -61,7 +65,7 @@ const handleLarkAuth = async () => {
           // 发送登录成功消息给父页面
           window.parent.postMessage(
             { type: 'lark-login-success', token: response.data.token },
-            window.location.origin
+            window.location.origin,
           )
 
           // 可以选择在iframe中关闭自身或显示成功信息
@@ -83,7 +87,7 @@ const handleLarkAuth = async () => {
     if (isInIframe()) {
       window.parent.postMessage(
         { type: 'lark-login-failed', error: errorMsg.value },
-        window.location.origin
+        window.location.origin,
       )
     } else {
       // 不在iframe中时，跳转到首页
@@ -171,8 +175,12 @@ const getQueryParam = (key: string): string | null => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-icon {

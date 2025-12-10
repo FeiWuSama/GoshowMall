@@ -59,7 +59,7 @@ func (l *LarkRpc) GetLarkUserAccessToken(ctx context.Context, appCode int32, cod
 		"client_id":     l.config.AppConfig[appCode].AppId,
 		"client_secret": l.config.AppConfig[appCode].AppSecret,
 		"code":          code,
-		"redirect_uri":  "http://localhost:5174/user/lark/auth",
+		"redirect_uri":  redirectUrl,
 		"scope":         scope,
 	}
 	bodyBytes, err := json.Marshal(body)

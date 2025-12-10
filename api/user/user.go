@@ -216,7 +216,6 @@ func (c *Ctrl) LoginByLark(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
-	userLarkLoginDto.AppCode = 1002
 	userVo, err := c.userService.SLogin(ctx.Request.Context(), userLarkLoginDto)
 	if err != nil {
 		if errors.As(err, &result.BusinessError{}) {
