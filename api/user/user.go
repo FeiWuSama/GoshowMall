@@ -265,7 +265,7 @@ func (c *Ctrl) PostMobileSmsCode(ctx *gin.Context) {
 // @param userMobileSmsLoginDto body dto.UserMobileSmsLoginDto true "手机号短信验证码登录信息"
 // @Success 200 {object} result.Result[vo.UserVo]
 // @host localhost:8080
-// @Router /api/user/mobile/smsCode/verify [post]
+// @Router /api/user/mobile/login/smsCode [post]
 func (c *Ctrl) MobileLoginBySmsCode(ctx *gin.Context) {
 	userMobileSmsLoginDto := &dto.UserMobileSmsLoginDto{}
 	if err := ctx.ShouldBindJSON(userMobileSmsLoginDto); err != nil {
