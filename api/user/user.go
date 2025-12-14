@@ -228,3 +228,31 @@ func (c *Ctrl) LoginByLark(ctx *gin.Context) {
 	}
 	result.NewResultWithOk[vo.UserVo](ctx, *userVo)
 }
+
+// PostMobileSmsCode
+// @Summary 手机号短信验证码登录
+// @Tags user
+// @Accept json
+// @Produce json
+// @param ticket query string true "ticket"
+// @param mobile query string true "mobile"
+// @param scene query string true "场景"
+// @Success 200 {object} result.Result[any]
+// @host localhost:8080
+// @Router /api/user/mobile/smsCode [post]
+func (c *Ctrl) PostMobileSmsCode(ctx *gin.Context) {
+	ticket := ctx.Query("ticket")
+	mobile := ctx.Query("mobile")
+	scene := ctx.Query("scene")
+	err := c.userService.SPostMobileSmsCode(ctx.Request.Context(), ticket, mobile, scene)
+	if err != nil {
+		if errors.As(err, &result.BusinessError{}) {
+			result.NewResultWithError(ctx, nil, err.(*result.BusinessError))
+		} else {
+			result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
+		}
+		ctx.Abort()
+		return
+	}
+	result.NewResultWithOk[any](ctx, nil)
+}

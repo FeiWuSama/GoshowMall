@@ -20,6 +20,15 @@ type Service struct {
 	larkRpc     *rpc.LarkRpc
 }
 
+func (s Service) SLarkGetTenantToken(ctx context.Context, appCode int32) (*vo.LarkTenantTokenVo, error) {
+	tokenVo, err := s.larkRpc.GetLarkTenantToken(ctx, appCode)
+	if err != nil {
+		logger.Error("getLarkTenantToken err", zap.Error(err))
+		return nil, err
+	}
+	return tokenVo, nil
+}
+
 func (s Service) SLarkGetToken(ctx context.Context, appCode int32, code string, redirectUrl string, scope string) (*vo.LarkAccessTokenVo, error) {
 	tokenVo, err := s.getAccessToken(ctx, appCode, code, redirectUrl, scope)
 	if err != nil {

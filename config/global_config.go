@@ -12,10 +12,11 @@ var (
 )
 
 type Config struct {
-	Server    Server              `yaml:"server"`
-	MySql     MySql               `yaml:"mysql"`
-	Redis     Redis               `yaml:"redis"`
-	AppConfig map[int32]AppConfig `yaml:"app_config"`
+	Server      Server              `yaml:"server"`
+	MySql       MySql               `yaml:"mysql"`
+	Redis       Redis               `yaml:"redis"`
+	LarkGroupID string              `yaml:"group_id" mapstructure:"group_id"`
+	AppConfig   map[int32]AppConfig `yaml:"app_config"`
 }
 
 type Server struct {
@@ -116,5 +117,6 @@ func getConfig(vipConfig *viper.Viper) (*Config, error) {
 			}
 		}
 	}
+
 	return &GlobalConfig, nil
 }

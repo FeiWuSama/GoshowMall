@@ -15,3 +15,10 @@ type UserLarkLoginDto struct {
 	Code        string `json:"code"`
 	RedirectUri string `json:"redirect_uri"`
 }
+
+type UserLarkMsgDto struct {
+	AppCode int32  `json:"app_code"`
+	OpenId  string `json:"open_id"`
+	IdType  string
+	Content string `json:"content"`
+}

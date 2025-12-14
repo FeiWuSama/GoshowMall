@@ -70,3 +70,16 @@ func (v *Verify) IncrPasswordErrorCount(ctx context.Context, key string) (int64,
 func (v *Verify) DeletePasswordErrorCount(ctx context.Context, key string) error {
 	return v.redis.Del(ctx, constants.PasswordErrorKey+key).Err()
 }
+
+func (v *Verify) SaveSmsLoginCode(ctx context.Context, key string, scene string, token string) error {
+	return v.redis.Set(ctx, constants.SmsCodeKey+scene+":"+key, token, constants.SmsLoginExpire*time.Second).Err()
+}
+
+func (v *Verify) GetSmsLoginCode(ctx context.Context, key string, scene string) (string, error) {
+	result, err := v.redis.Get(ctx, constants.SmsCodeKey+scene+":"+key).Result()
+	if err != nil {
+		v.redis.Del(ctx, constants.SmsCodeKey+scene+":"+key)
+		return "", err
+	}
+	return result, nil
+}

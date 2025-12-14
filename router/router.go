@@ -122,9 +122,10 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 	}))
 	{
 		userRoute.GET("/captcha/slide", r.user.GetSlideCaptcha)
-		userRoute.POST("captcha/slide/verify", r.user.VerifySlideCaptcha)
+		userRoute.POST("/captcha/slide/verify", r.user.VerifySlideCaptcha)
 		userRoute.POST("/mobile/login/password", r.user.MobileLoginByPassword)
 		userRoute.GET("/info", r.user.GetUserInfo)
 		userRoute.POST("/lark/login", r.user.LoginByLark)
+		userRoute.POST("/mobile/smsCode", r.user.PostMobileSmsCode)
 	}
 }

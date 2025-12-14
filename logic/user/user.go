@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/cnchef/gconv"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"workspace-goshow-mall/adaptor"
 	myRedis "workspace-goshow-mall/adaptor/redis"
@@ -18,6 +17,7 @@ import (
 	"workspace-goshow-mall/service"
 	"workspace-goshow-mall/utils/logger"
 	"workspace-goshow-mall/utils/md5"
+	"workspace-goshow-mall/utils/random"
 )
 
 type Service struct {
@@ -43,7 +43,7 @@ func (s Service) SLogin(context context.Context, userMobileLoginDto interface{})
 			return nil, err
 		}
 	}
-	token := uuid.New().String()
+	token := random.GenUUId()
 	userVo := &vo.UserVo{
 		Token:    token,
 		Id:       user.ID,
@@ -105,4 +105,37 @@ func (s Service) getUserByLark(ctx context.Context, dto *dto.UserLarkLoginDto) (
 		return nil, result.NewBusinessErrorWithMsg(result.ParamError, "飞书登录失败")
 	}
 	return user, nil
+}
+
+func (s Service) SPostMobileSmsCode(ctx context.Context, ticket string, mobile string, scene string) error {
+	_, err := s.verify.GetCaptchaTicket(ctx, ticket)
+	if err != nil {
+		logger.Error("verify error", zap.Error(err))
+		return err
+	}
+	smsCode := random.GenSmsCode(4)
+	getTokenFunc := func(ctx context.Context) (string, error) {
+		tokenVo, err := s.larkRpc.GetLarkTenantToken(ctx, constants.LarkAppCode)
+		if err != nil {
+			logger.Error("get lark tenant token err", zap.Error(err))
+			return "", err
+		}
+		return tokenVo.TenantAccessToken, nil
+	}
+	err = s.larkRpc.SendLarkMsg(ctx, getTokenFunc, &dto.UserLarkMsgDto{
+		AppCode: constants.LarkAppCode,
+		Content: fmt.Sprintf("<b>手机验证码通知</b>\n\n手机号：%s\n验证码：%s", mobile, smsCode),
+		IdType:  constants.ChatIdType,
+		OpenId:  s.adapter.Config.LarkGroupID,
+	})
+	if err != nil {
+		logger.Error("send lark msg error", zap.Error(err))
+		return err
+	}
+	err = s.verify.SaveSmsLoginCode(ctx, mobile, scene, smsCode)
+	if err != nil {
+		logger.Error("redis error", zap.Error(err))
+		return err
+	}
+	return nil
 }
