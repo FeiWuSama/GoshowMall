@@ -18,8 +18,10 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
+    "@types/js-cookie": "^3.0.6",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.13.2",
+    "js-cookie": "^3.0.5",
     "pinia": "^3.0.3",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"

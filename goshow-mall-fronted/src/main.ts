@@ -14,8 +14,6 @@ app.use(pinia)
 app.use(router)
 app.use(AntDesign)
 
-// 初始化用户信息，从localStorage恢复
-const authStore = useAuthStore()
-authStore.initUserInfo()
+
 
 app.mount('#app')

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Layout, Menu, Button } from 'ant-design-vue'
+import { Layout, Menu, Button, Dropdown, Avatar } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -36,6 +36,22 @@ const handleMenuClick = (item: MenuItem) => {
 const handleLogin = () => {
   authStore.openLoginModal()
 }
+
+const handleLogout = () => {
+  authStore.logout()
+}
+
+const handleUserMenuClick = (e: any) => {
+  if (e.key === 'logout') {
+    handleLogout()
+  } else if (e.key === 'profile') {
+    // 跳转到个人中心页面
+    router.push('/user/profile')
+  } else if (e.key === 'settings') {
+    // 跳转到设置页面
+    router.push('/user/settings')
+  }
+}
 </script>
 
 <template>
@@ -63,7 +79,30 @@ const handleLogin = () => {
       />
 
       <div class="auth-section">
-        <Button type="primary" @click="handleLogin">登录</Button>
+        <template v-if="authStore.userInfo">
+          <Dropdown
+            placement="bottom"
+            trigger="hover"
+          >
+            <div style="display: flex; align-items: center; cursor: pointer;">
+              <Avatar :src="authStore.userInfo.avatar || ''" class="user-avatar" style="margin-right: 8px;">
+                {{ authStore.userInfo.nickname?.charAt(0) || '用' }}
+              </Avatar>
+              <span>{{ authStore.userInfo.nickname || '用户' }}</span>
+            </div>
+            <template #overlay>
+              <Menu @click="handleUserMenuClick">
+                <Menu.Item key="profile">个人中心</Menu.Item>
+                <Menu.Item key="settings">设置</Menu.Item>
+                <Menu.Divider />
+                <Menu.Item key="logout">退出登录</Menu.Item>
+              </Menu>
+            </template>
+          </Dropdown>
+        </template>
+        <template v-else>
+          <Button type="primary" @click="handleLogin">登录</Button>
+        </template>
       </div>
     </div>
   </Layout.Header>
@@ -117,6 +156,31 @@ const handleLogin = () => {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.user-info:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.user-nickname {
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
 }
 
 /* 响应式 */

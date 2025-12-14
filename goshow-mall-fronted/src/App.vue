@@ -3,17 +3,30 @@ import { RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import Layout from './layout/Layout.vue'
 import LoginModal from './components/LoginModal.vue'
+import { onMounted } from 'vue'
 
 const authStore = useAuthStore()
 const route = useRoute()
 
-const handleLoginSuccess = (token: string) => {
-  console.log('用户已登录，token:', token)
+const handleLoginSuccess = (userVo: API.UserVo) => {
+  authStore.loginSuccess({
+    id: userVo.id || 0,
+    nickname: userVo.Nickname,
+    avatar: userVo.avatar,
+    token: userVo.token || '',
+    sex: userVo.sex || 0,
+  })
   authStore.closeLoginModal()
 }
 
 // 需要排除布局的路由路径
 const noLayoutRoutes = ['/user/lark/auth']
+
+// 页面挂载时自动登录
+onMounted(() => {
+  // 从cookies中获取token并自动登录
+  authStore.autoLogin()
+})
 </script>
 
 <template>

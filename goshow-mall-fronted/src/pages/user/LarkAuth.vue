@@ -49,11 +49,11 @@ const handleLarkAuth = async () => {
       // 登录成功，保存用户信息到Pinia
       authStore.loginSuccess({
         id: response.data.id,
-        phone: response.data.phone,
+        mobile: response.data.phone,
         nickname: response.data.nickname,
         avatar: response.data.avatar,
         token: response.data.token,
-        ...response.data,
+        sex: response.data.sex
       })
 
       // 延迟1.5秒后显示登录成功

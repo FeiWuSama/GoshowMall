@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
+import Cookies from 'js-cookie'
 
 // 创建 Axios 实例
 const myAxios = axios.create({
@@ -32,6 +33,11 @@ myAxios.interceptors.request.use(
         // 如果没有过期时间，直接添加到请求头
         config.headers['Captcha-Ticket'] = ticket
       }
+    }
+
+    // 添加token
+    if(Cookies.get('token')){
+      config.headers['token'] = Cookies.get('token')
     }
 
     return config

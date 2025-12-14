@@ -18,13 +18,14 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const emit = defineEmits<{
-  'update:visible': [value: boolean]
-  'login-success': [token: string]
-}>()
-
 // 获取auth store
 const authStore = useAuthStore()
+
+const emit = defineEmits<{
+  'update:visible': [value: boolean]
+  'login-success': [userInfo: Object]
+}>()
+
 
 // 手机号密码登录
 const accountForm = ref({
@@ -119,20 +120,19 @@ const performLogin = async () => {
     })
     if (response.code === 20000 && response.data) {
       message.success('登录成功')
-      console.log('登录响应:', response)
 
       // 保存用户信息到pinia store
       authStore.loginSuccess({
         id: response.data.id,
-        phone: response.data.phone,
+        mobile: response.data.phone,
         nickname: response.data.nickname,
         avatar: response.data.avatar,
         token: response.data.token,
-        ...response.data,
+        sex : response.data.sex,
       })
 
       // 触发登录成功事件
-      emit('login-success', response.data.token)
+      emit('login-success', response.data)
       handleClose()
     } else {
       message.error(response.msg || '登录失败')
@@ -202,14 +202,14 @@ const handleCodeLogin = async () => {
       // 保存用户信息到pinia store
       authStore.loginSuccess({
         id: response.data.id,
-        phone: response.data.phone,
+        mobile: response.data.phone,
         nickname: response.data.nickname,
         avatar: response.data.avatar,
         token: response.data.token,
-        ...response.data,
+        sex : response.data.sex,
       })
 
-      emit('login-success', response.data.token)
+      emit('login-success', response.data)
       message.success('登录成功')
       handleClose()
     } else {
