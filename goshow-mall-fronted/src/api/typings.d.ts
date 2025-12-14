@@ -13,6 +13,21 @@ declare namespace API {
     status: number
   }
 
+  type postUserMobileSmsCodeParams = {
+    /** ticket */
+    ticket: string
+    /** mobile */
+    mobile: string
+    /** 场景 */
+    scene: string
+  }
+
+  type ResultAny = {
+    code?: number
+    data?: any
+    msg?: string
+  }
+
   type ResultVoSlideCaptchaCheckVo = {
     code?: number
     data?: SlideCaptchaCheckVo
@@ -70,6 +85,12 @@ declare namespace API {
     mobile?: string
     password?: string
     ticket?: string
+  }
+
+  type UserMobileSmsLoginDto = {
+    mobile?: string
+    scene?: string
+    verify_code?: string
   }
 
   type UserVo = {

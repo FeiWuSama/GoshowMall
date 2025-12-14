@@ -6,8 +6,11 @@ import {
   getUserCaptchaSlide,
   postUserCaptchaSlideVerify,
   postUserMobileLoginPassword,
+  postUserMobileSmsCode,
+  postUserMobileLoginSmsCode,
 } from '@/api/user.ts'
 import { useAuthStore } from '@/stores/auth.ts'
+import { CODE_SCENE } from '@/constant/constant.ts'
 
 interface Props {
   visible: boolean
@@ -41,6 +44,10 @@ const codeForm = ref({
 const isLoading = ref(false)
 const activeTab = ref('account')
 const countDown = ref(0)
+// 验证码计时器
+let timer: number | null = null
+// 当前验证码请求的场景
+const captchaScene = ref('')
 
 // 验证码相关状态
 const captchaModal = ref(false)
@@ -144,7 +151,15 @@ const handleGetCode = async () => {
     return
   }
 
+  // 检查是否为手机号
+  if (!isPhoneNumber(codeForm.value.phone)) {
+    message.error('请输入正确的手机号')
+    return
+  }
+
   try {
+    // 设置当前场景为获取验证码
+    captchaScene.value = 'getCode'
     // 先获取滑块验证码
     let result = await getUserCaptchaSlide()
     if (result.code === 20000 && result.data) {
@@ -162,27 +177,49 @@ const handleGetCode = async () => {
 
 // 验证码登录
 const handleCodeLogin = async () => {
-  // 检查是否为手机号登录
-  if (!isPhoneNumber(accountForm.value.mobile)) {
+  if (!codeForm.value.phone || !codeForm.value.code) {
+    message.error('请填写手机号和验证码')
+    return
+  }
+
+  // 检查是否为手机号
+  if (!isPhoneNumber(codeForm.value.phone)) {
     message.error('请输入正确的手机号')
     return
   }
 
   isLoading.value = true
-  // try {
-  //   const response = await loginByCode({
-  //     phone: codeForm.value.phone,
-  //     code: codeForm.value.code,
-  //   })
-  //   message.success('登录成功')
-  //   console.log('登录响应:', response)
-  //   emit('login-success', 'token')
-  //   handleClose()
-  // } catch (error) {
-  //   message.error('登录失败')
-  // } finally {
-  //   isLoading.value = false
-  // }
+  try {
+    const response = await postUserMobileLoginSmsCode({
+      mobile: codeForm.value.phone,
+      verify_code: codeForm.value.code,
+      scene: CODE_SCENE.LOGIN,
+    })
+    if (response.code === 20000 && response.data) {
+      message.success('登录成功')
+      console.log('登录响应:', response)
+
+      // 保存用户信息到pinia store
+      authStore.loginSuccess({
+        id: response.data.id,
+        phone: response.data.phone,
+        nickname: response.data.nickname,
+        avatar: response.data.avatar,
+        token: response.data.token,
+        ...response.data,
+      })
+
+      emit('login-success', response.data.token)
+      message.success('登录成功')
+      handleClose()
+    } else {
+      message.error(response.msg || '登录失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '登录失败')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // 验证滑块
@@ -217,6 +254,12 @@ const handleVerifyCaptcha = async () => {
         await performLogin()
         // 重置验证码验证标记
         isCaptchaRequired.value = false
+      } else if (captchaScene.value === 'getCode') {
+        // 如果是为了获取验证码而进行的验证
+        captchaModal.value = false
+        await sendSmsCode()
+        // 重置场景
+        captchaScene.value = ''
       } else {
         captchaModal.value = false
       }
@@ -236,6 +279,47 @@ const handleVerifyCaptcha = async () => {
   } finally {
     captchaVerifying.value = false
   }
+}
+
+// 发送短信验证码
+const sendSmsCode = async () => {
+  try {
+    // 调用发送验证码接口
+    const response = await postUserMobileSmsCode({
+      ticket: localStorage.getItem('captchaTicket') || '',
+      mobile: codeForm.value.phone,
+      scene: CODE_SCENE.LOGIN,
+    })
+    if (response.code === 20000) {
+      message.success('验证码发送成功')
+      // 开始倒计时
+      startCountDown()
+    } else {
+      message.error(response.msg || '验证码发送失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '验证码发送失败')
+  }
+}
+
+// 开始倒计时
+const startCountDown = () => {
+  countDown.value = 60
+  // 清除之前的计时器
+  if (timer) {
+    clearInterval(timer)
+  }
+  // 设置新的计时器
+  timer = setInterval(() => {
+    countDown.value--
+    if (countDown.value <= 0) {
+      // 倒计时结束，清除计时器
+      if (timer) {
+        clearInterval(timer)
+        timer = null
+      }
+    }
+  }, 1000) as unknown as number
 }
 
 // 重新获取滑块验证码
@@ -360,12 +444,12 @@ const feishuLoginState = ref({
   isLoading: false,
   hasQrCode: false,
   sdkLoaded: false,
-  showAuthIframe: false // 控制是否显示授权iframe
+  showAuthIframe: false, // 控制是否显示授权iframe
 })
 
 // 保存飞书QRLogin实例引用和goto地址
-let qrLoginInstance:any = null
-let qrLoginGoto:string = ''
+let qrLoginInstance: any = null
+let qrLoginGoto: string = ''
 
 // 为window添加QRLogin类型定义
 declare global {
@@ -383,7 +467,8 @@ const loadFeishuQRSDK = async () => {
 
   return new Promise<void>((resolve) => {
     const script = document.createElement('script')
-    script.src = 'https://lf-package-cn.feishucdn.com/obj/feishu-static/lark/passport/qrcode/LarkSSOSDKWebQRCode-1.0.3.js'
+    script.src =
+      'https://lf-package-cn.feishucdn.com/obj/feishu-static/lark/passport/qrcode/LarkSSOSDKWebQRCode-1.0.3.js'
     script.onload = () => {
       feishuLoginState.value.sdkLoaded = true
       initQRLogin()
@@ -454,7 +539,7 @@ const handleFeishuMessage = (event) => {
 }
 
 // 处理来自iframe的消息
-const handleIframeMessage = (event) => {
+const handleIframeMessage = (event: MessageEvent) => {
   // 验证消息来源
   if (event.origin !== window.location.origin) {
     return
@@ -466,7 +551,7 @@ const handleIframeMessage = (event) => {
     message.success('飞书登录成功')
     setTimeout(() => {
       handleClose()
-    },2000)
+    }, 2000)
   } else if (event.data && event.data.type === 'lark-login-failed') {
     // 登录失败，显示错误信息
     message.error(event.data.error || '飞书登录失败')
@@ -620,6 +705,12 @@ onUnmounted(() => {
   // 清理实例引用和goto地址
   qrLoginInstance = null
   qrLoginGoto = ''
+
+  // 清理验证码计时器
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
 })
 </script>
 
@@ -644,15 +735,15 @@ onUnmounted(() => {
           <Form layout="vertical">
             <Form.Item label="手机号" required>
               <Input
-                  v-model:value="accountForm.mobile"
-                  placeholder="请输入手机号"
-                  size="large"
-                  allow-clear
-                >
-                  <template #prefix>
-                    <PhoneOutlined />
-                  </template>
-                </Input>
+                v-model:value="accountForm.mobile"
+                placeholder="请输入手机号"
+                size="large"
+                allow-clear
+              >
+                <template #prefix>
+                  <PhoneOutlined />
+                </template>
+              </Input>
             </Form.Item>
 
             <Form.Item label="密码" required>
@@ -711,6 +802,7 @@ onUnmounted(() => {
                   size="large"
                   :disabled="countDown > 0"
                   @click="handleGetCode"
+                  style="width: 120px; text-align: center; min-width: 120px"
                 >
                   {{ countDown > 0 ? `${countDown}s` : '获取验证码' }}
                 </Button>
@@ -738,11 +830,21 @@ onUnmounted(() => {
             <div v-if="!feishuLoginState.showAuthIframe" style="text-align: center">
               <div
                 id="login_container"
-                style="width: 250px; height: 250px; margin: 0 auto; display: flex; align-items: center; justify-content: center"
+                style="
+                  width: 250px;
+                  height: 250px;
+                  margin: 0 auto;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
               ></div>
 
               <!-- 加载中状态 -->
-              <div v-if="feishuLoginState.isLoading" style="text-align: center; margin-top: 16px; color: #1890ff">
+              <div
+                v-if="feishuLoginState.isLoading"
+                style="text-align: center; margin-top: 16px; color: #1890ff"
+              >
                 正在加载二维码...
               </div>
             </div>
