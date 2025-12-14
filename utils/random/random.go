@@ -8,12 +8,12 @@ import (
 	"time"
 )
 
-func UUId() string {
+func GenUUId() string {
 	return strings.ReplaceAll(uuid.New().String(), "-", "")
 }
 
-func SmsCode(width int) string {
-	nums := [10]byte{1, 2, 3, 4, 5, 6, 7, 8, 9}
+func GenSmsCode(width int) string {
+	nums := [10]byte{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
 	l := len(nums)
 	rand.NewSource(time.Now().UnixNano())
 
