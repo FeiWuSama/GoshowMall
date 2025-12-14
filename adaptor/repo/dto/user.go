@@ -2,11 +2,11 @@ package dto
 
 type UserMobileLoginDto struct {
 	Mobile string `json:"mobile"`
-	Ticket string `json:"ticket"`
 }
 
 type UserMobilePasswordLoginDto struct {
 	UserMobileLoginDto
+	Ticket   string `json:"ticket"`
 	Password string `json:"password"`
 }
 
@@ -21,4 +21,10 @@ type UserLarkMsgDto struct {
 	OpenId  string `json:"open_id"`
 	IdType  string
 	Content string `json:"content"`
+}
+
+type UserMobileSmsLoginDto struct {
+	UserMobileLoginDto
+	VerifyCode string `json:"verify_code"`
+	Scene      string `json:"scene"`
 }

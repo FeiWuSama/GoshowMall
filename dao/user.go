@@ -5,7 +5,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 	"workspace-goshow-mall/adaptor"
-	"workspace-goshow-mall/adaptor/repo/dto"
 	"workspace-goshow-mall/adaptor/repo/model"
 	"workspace-goshow-mall/adaptor/repo/query"
 	"workspace-goshow-mall/result"
@@ -38,8 +37,8 @@ func (u UserDao) GetUserByOpenIdAndCode(ctx context.Context, id string, code int
 	return user, nil
 }
 
-func (u UserDao) GetUserByMobile(ctx context.Context, loginDto *dto.UserMobilePasswordLoginDto) (*model.User, error) {
-	mobileSha256 := sha256.NewSHA256Crypto().HashToBase64(loginDto.Mobile)
+func (u UserDao) GetUserByMobile(ctx context.Context, mobile string) (*model.User, error) {
+	mobileSha256 := sha256.NewSHA256Crypto().HashToBase64(mobile)
 	qs1 := query.Use(u.db).MobileUser
 	mobileUser, err := qs1.WithContext(ctx).Where(qs1.MobileSha256.Eq(mobileSha256)).First()
 	if err != nil {

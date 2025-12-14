@@ -42,6 +42,11 @@ func (s Service) SLogin(context context.Context, userMobileLoginDto interface{})
 		if err != nil {
 			return nil, err
 		}
+	case *dto.UserMobileSmsLoginDto:
+		user, err = s.getUserByVerifySmsCode(context, userMobileLoginDto.(*dto.UserMobileSmsLoginDto))
+		if err != nil {
+			return nil, err
+		}
 	}
 	token := random.GenUUId()
 	userVo := &vo.UserVo{
@@ -72,7 +77,7 @@ func (s Service) getUserByPassword(context context.Context, loginDto *dto.UserMo
 	if count > constants.PasswordErrorCount {
 		return nil, result.NewBusinessErrorWithMsg(result.ParamError, fmt.Sprintf("密码错误次数过多,请在%d分钟后重试", constants.PasswordErrorCount))
 	}
-	user, err := s.userMapper.GetUserByMobile(context, loginDto)
+	user, err := s.userMapper.GetUserByMobile(context, loginDto.Mobile)
 	if err != nil {
 		logger.Error("not found user error", zap.Error(err))
 		return nil, result.NewBusinessErrorWithMsg(result.ParamError, "手机号或密码错误")
@@ -138,4 +143,19 @@ func (s Service) SPostMobileSmsCode(ctx context.Context, ticket string, mobile s
 		return err
 	}
 	return nil
+}
+
+func (s Service) getUserByVerifySmsCode(ctx context.Context, loginDto *dto.UserMobileSmsLoginDto) (*model.User, error) {
+	smsLoginCode, err := s.verify.GetSmsLoginCode(ctx, loginDto.Mobile, loginDto.Scene)
+	if err != nil {
+		return nil, err
+	}
+	if smsLoginCode != loginDto.VerifyCode {
+		return nil, result.NewBusinessErrorWithMsg(result.ParamError, "验证码错误")
+	}
+	user, err := s.userMapper.GetUserByMobile(ctx, loginDto.Mobile)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }

@@ -127,5 +127,6 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 		userRoute.GET("/info", r.user.GetUserInfo)
 		userRoute.POST("/lark/login", r.user.LoginByLark)
 		userRoute.POST("/mobile/smsCode", r.user.PostMobileSmsCode)
+		userRoute.POST("/mobile/login/smsCode", r.user.MobileLoginBySmsCode)
 	}
 }

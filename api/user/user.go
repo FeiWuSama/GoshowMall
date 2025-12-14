@@ -256,3 +256,30 @@ func (c *Ctrl) PostMobileSmsCode(ctx *gin.Context) {
 	}
 	result.NewResultWithOk[any](ctx, nil)
 }
+
+// MobileLoginBySmsCode
+// @Summary 手机号短信验证码登录
+// @Tags user
+// @Accept json
+// @Produce json
+// @param userMobileSmsLoginDto body dto.UserMobileSmsLoginDto true "手机号短信验证码登录信息"
+// @Success 200 {object} result.Result[vo.UserVo]
+// @host localhost:8080
+// @Router /api/user/mobile/smsCode/verify [post]
+func (c *Ctrl) MobileLoginBySmsCode(ctx *gin.Context) {
+	userMobileSmsLoginDto := &dto.UserMobileSmsLoginDto{}
+	if err := ctx.ShouldBindJSON(userMobileSmsLoginDto); err != nil {
+		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ParamError))
+	}
+	userVo, err := c.userService.SLogin(ctx.Request.Context(), userMobileSmsLoginDto)
+	if err != nil {
+		if errors.As(err, &result.BusinessError{}) {
+			result.NewResultWithError(ctx, nil, err.(*result.BusinessError))
+		} else {
+			result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
+		}
+		ctx.Abort()
+		return
+	}
+	result.NewResultWithOk[vo.UserVo](ctx, *userVo)
+}
