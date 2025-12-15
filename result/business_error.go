@@ -1,5 +1,10 @@
 package result
 
+import (
+	"errors"
+	"github.com/gin-gonic/gin"
+)
+
 type BusinessError struct {
 	Code int
 	Msg  string
@@ -21,4 +26,17 @@ func NewBusinessErrorWithMsg(code Code, msg string) *BusinessError {
 		Code: code.Code,
 		Msg:  msg,
 	}
+}
+
+func ErrorIf(ctx *gin.Context, err error) bool {
+	if err != nil {
+		if errors.As(err, &BusinessError{}) {
+			NewResultWithError(ctx, nil, err.(*BusinessError))
+		} else {
+			NewResultWithError(ctx, nil, NewBusinessError(ServerError))
+		}
+		ctx.Abort()
+		return true
+	}
+	return false
 }

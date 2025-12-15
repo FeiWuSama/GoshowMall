@@ -1,7 +1,6 @@
 package user
 
 import (
-	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
@@ -78,9 +77,8 @@ func (c *Ctrl) GetSlideCaptcha(ctx *gin.Context) {
 	}
 	key := uuid.New().String()
 	err = c.verify.SaveCaptcha(ctx, key, string(dotData))
-	if err != nil {
-		ctx.Abort()
-		logger.Error("captcha error", zap.Error(err))
+	errorIf := result.ErrorIf(ctx, err)
+	if errorIf {
 		return
 	}
 	result.NewResultWithOk[vo.SlideCaptchaVo](ctx, vo.SlideCaptchaVo{
@@ -112,9 +110,8 @@ func (c *Ctrl) VerifySlideCaptcha(ctx *gin.Context) {
 		return
 	}
 	captchaData, err := c.verify.GetCaptcha(ctx.Request.Context(), slideCaptchaCheckDto.Key)
-	if err != nil {
-		result.NewResultWithError(ctx, nil, result.NewBusinessErrorWithMsg(result.ParamError, "验证码已过期"))
-		ctx.Abort()
+	errorIf := result.ErrorIf(ctx, err)
+	if errorIf {
 		return
 	}
 	dot := slide.Block{}
@@ -140,9 +137,8 @@ func (c *Ctrl) VerifySlideCaptcha(ctx *gin.Context) {
 		return
 	}
 	err = c.verify.SaveCaptchaTicket(ctx.Request.Context(), constants.CaptchaTicketKey+ticket, string(jsonData))
-	if err != nil {
-		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
-		ctx.Abort()
+	errorIf = result.ErrorIf(ctx, err)
+	if errorIf {
 		return
 	}
 	result.NewResultWithOk[vo.SlideCaptchaCheckVo](ctx, vo.SlideCaptchaCheckVo{
@@ -169,13 +165,8 @@ func (c *Ctrl) MobileLoginByPassword(ctx *gin.Context) {
 	}
 	userMobileLoginDto.Ticket = ctx.Request.Header.Get("captcha-ticket")
 	userVo, err := c.userService.SLogin(ctx.Request.Context(), userMobileLoginDto)
-	if err != nil {
-		if errors.As(err, &result.BusinessError{}) {
-			result.NewResultWithError(ctx, nil, err.(*result.BusinessError))
-		} else {
-			result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
-		}
-		ctx.Abort()
+	errorIf := result.ErrorIf(ctx, err)
+	if errorIf {
 		return
 	}
 	result.NewResultWithOk[vo.UserVo](ctx, *userVo)
@@ -217,13 +208,8 @@ func (c *Ctrl) LoginByLark(ctx *gin.Context) {
 		return
 	}
 	userVo, err := c.userService.SLogin(ctx.Request.Context(), userLarkLoginDto)
-	if err != nil {
-		if errors.As(err, &result.BusinessError{}) {
-			result.NewResultWithError(ctx, nil, err.(*result.BusinessError))
-		} else {
-			result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
-		}
-		ctx.Abort()
+	errorIf := result.ErrorIf(ctx, err)
+	if errorIf {
 		return
 	}
 	result.NewResultWithOk[vo.UserVo](ctx, *userVo)
@@ -245,13 +231,8 @@ func (c *Ctrl) PostMobileSmsCode(ctx *gin.Context) {
 	mobile := ctx.Query("mobile")
 	scene := ctx.Query("scene")
 	err := c.userService.SPostMobileSmsCode(ctx.Request.Context(), ticket, mobile, scene)
-	if err != nil {
-		if errors.As(err, &result.BusinessError{}) {
-			result.NewResultWithError(ctx, nil, err.(*result.BusinessError))
-		} else {
-			result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
-		}
-		ctx.Abort()
+	errorIf := result.ErrorIf(ctx, err)
+	if errorIf {
 		return
 	}
 	result.NewResultWithOk[any](ctx, nil)
@@ -272,13 +253,8 @@ func (c *Ctrl) MobileLoginBySmsCode(ctx *gin.Context) {
 		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ParamError))
 	}
 	userVo, err := c.userService.SLogin(ctx.Request.Context(), userMobileSmsLoginDto)
-	if err != nil {
-		if errors.As(err, &result.BusinessError{}) {
-			result.NewResultWithError(ctx, nil, err.(*result.BusinessError))
-		} else {
-			result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
-		}
-		ctx.Abort()
+	errorIf := result.ErrorIf(ctx, err)
+	if errorIf {
 		return
 	}
 	result.NewResultWithOk[vo.UserVo](ctx, *userVo)
