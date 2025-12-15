@@ -31,7 +31,6 @@ func newAdmin(db *gorm.DB, opts ...gen.DOOption) admin {
 	_admin.Name = field.NewString(tableName, "name")
 	_admin.NickName = field.NewString(tableName, "nick_name")
 	_admin.Mobile = field.NewString(tableName, "mobile")
-	_admin.LarkOpenID = field.NewString(tableName, "lark_open_id")
 	_admin.Password = field.NewString(tableName, "password")
 	_admin.Status = field.NewInt32(tableName, "status")
 	_admin.CreateAt = field.NewTime(tableName, "create_at")
@@ -39,7 +38,6 @@ func newAdmin(db *gorm.DB, opts ...gen.DOOption) admin {
 	_admin.CreateBy = field.NewInt64(tableName, "create_by")
 	_admin.UpdateBy = field.NewInt64(tableName, "update_by")
 	_admin.Sex = field.NewInt32(tableName, "sex")
-	_admin.IsDelete = field.NewInt32(tableName, "is_delete")
 
 	_admin.fillFieldMap()
 
@@ -50,20 +48,18 @@ func newAdmin(db *gorm.DB, opts ...gen.DOOption) admin {
 type admin struct {
 	adminDo adminDo
 
-	ALL        field.Asterisk
-	ID         field.Int64  // 主键-管理员ID表
-	Name       field.String // 名字
-	NickName   field.String // 昵称
-	Mobile     field.String // 手机号
-	LarkOpenID field.String // 飞书OpenID
-	Password   field.String // 密码
-	Status     field.Int32  // 1:正常-1:禁用
-	CreateAt   field.Time
-	UpdateAt   field.Time
-	CreateBy   field.Int64
-	UpdateBy   field.Int64
-	Sex        field.Int32 // 3:其他1:男2:女
-	IsDelete   field.Int32
+	ALL      field.Asterisk
+	ID       field.Int64  // 主键-管理员ID表
+	Name     field.String // 名字
+	NickName field.String // 昵称
+	Mobile   field.String // 手机号
+	Password field.String // 密码
+	Status   field.Int32  // 1:正常-1:禁用
+	CreateAt field.Time
+	UpdateAt field.Time
+	CreateBy field.Int64
+	UpdateBy field.Int64
+	Sex      field.Int32 // 3:其他1:男2:女
 
 	fieldMap map[string]field.Expr
 }
@@ -84,7 +80,6 @@ func (a *admin) updateTableName(table string) *admin {
 	a.Name = field.NewString(table, "name")
 	a.NickName = field.NewString(table, "nick_name")
 	a.Mobile = field.NewString(table, "mobile")
-	a.LarkOpenID = field.NewString(table, "lark_open_id")
 	a.Password = field.NewString(table, "password")
 	a.Status = field.NewInt32(table, "status")
 	a.CreateAt = field.NewTime(table, "create_at")
@@ -92,7 +87,6 @@ func (a *admin) updateTableName(table string) *admin {
 	a.CreateBy = field.NewInt64(table, "create_by")
 	a.UpdateBy = field.NewInt64(table, "update_by")
 	a.Sex = field.NewInt32(table, "sex")
-	a.IsDelete = field.NewInt32(table, "is_delete")
 
 	a.fillFieldMap()
 
@@ -117,12 +111,11 @@ func (a *admin) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (a *admin) fillFieldMap() {
-	a.fieldMap = make(map[string]field.Expr, 13)
+	a.fieldMap = make(map[string]field.Expr, 11)
 	a.fieldMap["id"] = a.ID
 	a.fieldMap["name"] = a.Name
 	a.fieldMap["nick_name"] = a.NickName
 	a.fieldMap["mobile"] = a.Mobile
-	a.fieldMap["lark_open_id"] = a.LarkOpenID
 	a.fieldMap["password"] = a.Password
 	a.fieldMap["status"] = a.Status
 	a.fieldMap["create_at"] = a.CreateAt
@@ -130,7 +123,6 @@ func (a *admin) fillFieldMap() {
 	a.fieldMap["create_by"] = a.CreateBy
 	a.fieldMap["update_by"] = a.UpdateBy
 	a.fieldMap["sex"] = a.Sex
-	a.fieldMap["is_delete"] = a.IsDelete
 }
 
 func (a admin) clone(db *gorm.DB) admin {

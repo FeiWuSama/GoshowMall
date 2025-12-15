@@ -33,7 +33,6 @@ CREATE TABLE `admin`
     `name`         varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '名字',
     `nick_name`    varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '昵称',
     `mobile`       varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '手机号',
-    `lark_open_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '飞书OpenID',
     `password`     varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '密码',
     `status`       tinyint                                                       NOT NULL DEFAULT '1' COMMENT '1:正常-1:禁用',
     `create_at`    datetime                                                      NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -41,7 +40,6 @@ CREATE TABLE `admin`
     `create_by`    bigint                                                        NOT NULL DEFAULT '0',
     `update_by`    bigint                                                        NOT NULL DEFAULT '0',
     `sex`          tinyint                                                       NOT NULL DEFAULT 3 COMMENT '3:其他1:男2:女',
-    `is_delete`    tinyint                                                       NOT NULL DEFAULT 0,
     PRIMARY KEY (id) USING BTREE,
     UNIQUE KEY idx_mobile (`mobile`) USING BTREE,
     KEY idx_name (`name`) USING BTREE
