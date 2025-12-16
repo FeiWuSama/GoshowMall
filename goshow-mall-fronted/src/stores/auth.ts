@@ -7,7 +7,6 @@ import Cookies from 'js-cookie'
 // 定义用户信息类型
 interface UserInfo {
   id: number
-  mobile?: string
   nickname?: string
   avatar?: string
   token: string
@@ -47,18 +46,17 @@ export const useAuthStore = defineStore('auth', () => {
     if (token) {
         try {
           const response = await apiGetUserInfo()
-          if (response.code === 20000 && response.data) {
+          if (response.data.code === 20000 && response.data.data) {
             // 更新用户信息
             userInfo.value = {
-              avatar: response.data.avatar,
-              id: response.data.id,
-              mobile: response.data.mobile,
-              nickname: response.data.nickname,
-              sex: response.data.sex,
-              token: response.data.token,
+              avatar: response.data.data.avatar,
+              id: response.data.data.id || 0,
+              nickname: response.data.data.nickname,
+              sex: response.data.data.sex || 0,
+              token: response.data.data.token || '',
             }
           } else {
-            message.error(response.msg || '获取用户信息失败')
+            message.error(response.data.msg || '获取用户信息失败')
             logout()
           }
         } catch (error: any) {

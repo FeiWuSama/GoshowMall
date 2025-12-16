@@ -6,6 +6,19 @@ declare namespace API {
     username?: string
   }
 
+  type AdminLoginDto = {
+    mobile?: string
+    password?: string
+  }
+
+  type AdminVO = {
+    id?: number
+    name?: string
+    nickname?: string
+    sex?: number
+    token?: string
+  }
+
   type postAdminStatusIdStatusParams = {
     /** 用户id */
     id: number
@@ -25,6 +38,12 @@ declare namespace API {
   type ResultAny = {
     code?: number
     data?: any
+    msg?: string
+  }
+
+  type ResultVoAdminVO = {
+    code?: number
+    data?: AdminVO
     msg?: string
   }
 
@@ -94,9 +113,9 @@ declare namespace API {
   }
 
   type UserVo = {
-    Nickname?: string
     avatar?: string
     id?: number
+    nickname?: string
     sex?: number
     token?: string
   }

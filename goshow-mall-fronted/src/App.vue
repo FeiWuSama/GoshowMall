@@ -11,7 +11,7 @@ const route = useRoute()
 const handleLoginSuccess = (userVo: API.UserVo) => {
   authStore.loginSuccess({
     id: userVo.id || 0,
-    nickname: userVo.Nickname,
+    nickname: userVo.nickname,
     avatar: userVo.avatar,
     token: userVo.token || '',
     sex: userVo.sex || 0,

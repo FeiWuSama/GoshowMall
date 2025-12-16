@@ -10,9 +10,36 @@ export async function getAdminCaptchaSlide(options?: { [key: string]: any }) {
   })
 }
 
+/** 验证滑块验证码 POST /api/admin/captcha/slide/verify */
+export async function postAdminCaptchaSlideVerify(
+  body: API.SlideCaptchaCheckDto,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultVoSlideCaptchaCheckVo>('/api/admin/captcha/slide/verify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
 /** 创建用户 POST /api/admin/create */
 export async function postAdminCreate(body: API.AddAdminDto, options?: { [key: string]: any }) {
   return request<any>('/api/admin/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** 管理员登录 POST /api/admin/login */
+export async function postAdminLogin(body: API.AdminLoginDto, options?: { [key: string]: any }) {
+  return request<API.ResultVoAdminVO>('/api/admin/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

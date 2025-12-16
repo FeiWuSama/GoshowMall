@@ -44,16 +44,14 @@ const handleLarkAuth = async () => {
       app_code: 1002,
       redirect_uri: `${window.location.origin}/user/lark/auth`,
     })
-
-    if (response.code === 20000 && response.data) {
+    if (response.data.code === 20000 && response.data.data) {
       // 登录成功，保存用户信息到Pinia
       authStore.loginSuccess({
-        id: response.data.id,
-        mobile: response.data.phone,
-        nickname: response.data.nickname,
-        avatar: response.data.avatar,
-        token: response.data.token,
-        sex: response.data.sex
+        id: response.data.data.id || 0,
+        nickname: response.data.data.nickname,
+        avatar: response.data.data.avatar,
+        token: response.data.data.token || '',
+        sex: response.data.data.sex || 0
       })
 
       // 延迟1.5秒后显示登录成功

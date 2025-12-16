@@ -26,7 +26,6 @@ const emit = defineEmits<{
   'login-success': [userInfo: Object]
 }>()
 
-
 // 手机号密码登录
 const accountForm = ref({
   mobile: '',
@@ -95,9 +94,9 @@ const handleAccountLogin = async () => {
   // 如果是手机号，先获取滑块验证码
   try {
     const result = await getUserCaptchaSlide()
-    if (result.code === 20000 && result.data) {
-      captchaData.value = result.data
-      captchaKey.value = result.data.key
+    if (result.data.code === 20000 && result.data.data) {
+      captchaData.value = result.data.data
+      captchaKey.value = result.data.data.key || ''
       captchaSliderPosition.value = 0 // 初始位置设置为0
       captchaModal.value = true // 打开滑块验证码弹窗
       isCaptchaRequired.value = true // 标记需要验证码验证
@@ -118,24 +117,23 @@ const performLogin = async () => {
       mobile: accountForm.value.mobile,
       password: accountForm.value.password,
     })
-    if (response.code === 20000 && response.data) {
+    if (response.data.code === 20000 && response.data.data) {
       message.success('登录成功')
 
       // 保存用户信息到pinia store
       authStore.loginSuccess({
-        id: response.data.id,
-        mobile: response.data.phone,
-        nickname: response.data.nickname,
-        avatar: response.data.avatar,
-        token: response.data.token,
-        sex : response.data.sex,
+        id: response.data.data.id || 0,
+        nickname: response.data.data.nickname,
+        avatar: response.data.data.avatar,
+        token: response.data.data.token || '',
+        sex: response.data.data.sex || 0,
       })
 
       // 触发登录成功事件
-      emit('login-success', response.data)
+      emit('login-success', response.data.data)
       handleClose()
     } else {
-      message.error(response.msg || '登录失败')
+      message.error(response.data.msg || '登录失败')
     }
   } catch (error: any) {
     message.error(error.message || '登录失败')
@@ -162,9 +160,9 @@ const handleGetCode = async () => {
     captchaScene.value = 'getCode'
     // 先获取滑块验证码
     let result = await getUserCaptchaSlide()
-    if (result.code === 20000 && result.data) {
+    if (result.data.code === 20000 && result.data.data) {
       captchaData.value = result.data
-      captchaKey.value = result.data.key
+      captchaKey.value = result.data.data.key || ''
       captchaSliderPosition.value = 0 // 初始位置设置为0
       captchaModal.value = true // 打开滑块验证码弹窗
     } else {
@@ -195,25 +193,24 @@ const handleCodeLogin = async () => {
       verify_code: codeForm.value.code,
       scene: CODE_SCENE.LOGIN,
     })
-    if (response.code === 20000 && response.data) {
+    if (response.data.code === 20000 && response.data.data) {
       message.success('登录成功')
       console.log('登录响应:', response)
 
       // 保存用户信息到pinia store
       authStore.loginSuccess({
-        id: response.data.id,
-        mobile: response.data.phone,
-        nickname: response.data.nickname,
-        avatar: response.data.avatar,
-        token: response.data.token,
-        sex : response.data.sex,
+        id: response.data.data.id || 0,
+        nickname: response.data.data.nickname,
+        avatar: response.data.data.avatar,
+        token: response.data.data.token || '',
+        sex: response.data.data.sex || 0,
       })
 
-      emit('login-success', response.data)
+      emit('login-success', response.data.data)
       message.success('登录成功')
       handleClose()
     } else {
-      message.error(response.msg || '登录失败')
+      message.error(response.data.msg || '登录失败')
     }
   } catch (error: any) {
     message.error(error.message || '登录失败')
@@ -235,9 +232,9 @@ const handleVerifyCaptcha = async () => {
       slideX: Math.round(puzzleX),
       slideY: Math.round(captchaData.value.TitleY), // 使用接口返回的Y坐标
     })
-    if (response.code === 20000 && response.data) {
+    if (response.data.code === 20000 && response.data.data) {
       // 保存ticket凭证到localStorage
-      const { ticket, expire } = response.data
+      const { ticket, expire } = response.data.data
       if (ticket) {
         localStorage.setItem('captchaTicket', ticket)
         // 如果有过期时间，设置过期时间
@@ -290,12 +287,12 @@ const sendSmsCode = async () => {
       mobile: codeForm.value.phone,
       scene: CODE_SCENE.LOGIN,
     })
-    if (response.code === 20000) {
+    if (response.data.code === 20000) {
       message.success('验证码发送成功')
       // 开始倒计时
       startCountDown()
     } else {
-      message.error(response.msg || '验证码发送失败')
+      message.error(response.data.msg || '验证码发送失败')
     }
   } catch (error: any) {
     message.error(error.message || '验证码发送失败')
@@ -326,9 +323,9 @@ const startCountDown = () => {
 const fetchNewCaptcha = async () => {
   try {
     const result = await getUserCaptchaSlide()
-    if (result.code === 20000 && result.data) {
-      captchaData.value = result.data
-      captchaKey.value = result.data.key
+    if (result.data.code === 20000 && result.data.data) {
+      captchaData.value = result.data.data
+      captchaKey.value = result.data.data.key || ''
       captchaSliderPosition.value = 0 // 初始位置设置为0
     } else {
       message.error('获取验证码失败，请稍后重试')

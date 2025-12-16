@@ -63,7 +63,7 @@ myAxios.interceptors.response.use(
         window.location.href = `/user/login?redirect=${window.location.href}`
       }
     }
-    return response.data
+    return response
   },
   function (error) {
     // Any status codes that falls outside the range of 2xx cause this function to trigger
