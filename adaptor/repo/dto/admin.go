@@ -14,3 +14,8 @@ type UpdateAdminDto struct {
 	Mobile   string `json:"mobile"`
 	Sex      int32  `json:"sex"`
 }
+
+type AdminLoginDto struct {
+	Mobile   string `json:"mobile"`
+	Password string `json:"password"`
+}

@@ -116,6 +116,8 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 		adminRoute.POST("/create", r.admin.CreateAdmin)
 		adminRoute.POST("/update", r.admin.UpdateAdmin)
 		adminRoute.POST("/status/:id/:status", r.admin.ChangeStatus)
+		adminRoute.POST("/captcha/slide/verify", r.admin.VerifySlideCaptcha)
+		adminRoute.POST("/login", r.admin.Login)
 	}
 	userRoute := root.Group("/user", UserAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*vo.UserVo, error) {
 		return r.user.GetUserVo(c, r.adaptor, token)

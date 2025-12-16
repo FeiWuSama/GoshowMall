@@ -25,6 +25,15 @@ type AdminDao struct {
 	redisClient *redis.Client
 }
 
+func (a *AdminDao) GetAdminByMobile(ctx context.Context, mobile string) (*model.Admin, error) {
+	qs := query.Use(a.db).Admin
+	admin, err := qs.WithContext(ctx).Where(qs.Mobile.Eq(mobile)).First()
+	if err != nil {
+		return nil, err
+	}
+	return admin, nil
+}
+
 func (a *AdminDao) MChangeStatus(ctx context.Context, id string, status string, changeUserId int64) bool {
 	qs := query.Use(a.db).Admin
 	userId, err1 := strconv.Atoi(id)

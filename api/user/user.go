@@ -216,7 +216,7 @@ func (c *Ctrl) LoginByLark(ctx *gin.Context) {
 }
 
 // PostMobileSmsCode
-// @Summary 手机号短信验证码登录
+// @Summary 发送手机号短信验证码
 // @Tags user
 // @Accept json
 // @Produce json
