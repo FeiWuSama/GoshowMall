@@ -74,3 +74,11 @@ export async function postAdminUpdate(body: API.UpdateAdminDto, options?: { [key
     ...(options || {}),
   })
 }
+
+/** 获取管理员信息 GET /api/admin/info */
+export async function getUserInfo(options?: { [key: string]: any }) {
+  return request<API.ResultVoAdminVO>('/api/admin/info', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}

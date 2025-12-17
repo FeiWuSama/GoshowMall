@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick, onUnmounted } from 'vue'
 import { Form, Input, Button, Tabs, Space, message, Modal } from 'ant-design-vue'
-import { LockOutlined, PhoneOutlined } from '@ant-design/icons-vue'
+import { LockOutlined, PhoneOutlined, UserOutlined, TeamOutlined } from '@ant-design/icons-vue'
 import {
   getUserCaptchaSlide,
   postUserCaptchaSlideVerify,
@@ -9,7 +9,9 @@ import {
   postUserMobileSmsCode,
   postUserMobileLoginSmsCode,
 } from '@/api/user.ts'
+import { getAdminCaptchaSlide, postAdminCaptchaSlideVerify, postAdminLogin } from '@/api/admin.ts'
 import { useAuthStore } from '@/stores/auth.ts'
+import { useAdminAuthStore } from '@/stores/adminAuth.ts'
 import { CODE_SCENE } from '@/constant/constant.ts'
 
 interface Props {
@@ -25,6 +27,15 @@ const emit = defineEmits<{
   'update:visible': [value: boolean]
   'login-success': [userInfo: Object]
 }>()
+
+// 是否为管理员登录模式
+const isAdminMode = ref(false)
+
+// 管理员登录表单
+const adminForm = ref({
+  mobile: '',
+  password: '',
+})
 
 // 手机号密码登录
 const accountForm = ref({
@@ -68,8 +79,15 @@ const handleClose = () => {
 const resetForms = () => {
   accountForm.value = { mobile: '', password: '' }
   codeForm.value = { phone: '', code: '' }
+  adminForm.value = { mobile: '', password: '' }
   activeTab.value = 'account'
   countDown.value = 0
+}
+
+// 切换管理员/用户登录模式
+const toggleLoginMode = () => {
+  isAdminMode.value = !isAdminMode.value
+  resetForms()
 }
 
 // 检查是否为手机号
@@ -100,6 +118,7 @@ const handleAccountLogin = async () => {
       captchaSliderPosition.value = 0 // 初始位置设置为0
       captchaModal.value = true // 打开滑块验证码弹窗
       isCaptchaRequired.value = true // 标记需要验证码验证
+      captchaScene.value = 'userLogin' // 设置场景为用户登录
     } else {
       message.error('获取验证码失败')
     }
@@ -108,8 +127,8 @@ const handleAccountLogin = async () => {
   }
 }
 
-// 执行登录请求
-const performLogin = async () => {
+// 执行用户登录请求
+const performUserLogin = async () => {
   isLoading.value = true
   try {
     // 手机号登录
@@ -137,6 +156,63 @@ const performLogin = async () => {
     }
   } catch (error: any) {
     message.error(error.message || '登录失败')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 管理员登录处理
+const handleAdminLogin = async () => {
+  if (!adminForm.value.mobile || !adminForm.value.password) {
+    message.error('请填写手机号和密码')
+    return
+  }
+
+  // 先获取滑块验证码
+  try {
+    const result = await getAdminCaptchaSlide()
+    if (result.data.code === 20000 && result.data.data) {
+      captchaData.value = result.data.data
+      captchaKey.value = result.data.data.key || ''
+      captchaSliderPosition.value = 0 // 初始位置设置为0
+      captchaModal.value = true // 打开滑块验证码弹窗
+      isCaptchaRequired.value = true // 标记需要验证码验证
+      captchaScene.value = 'adminLogin' // 设置场景为管理员登录
+    } else {
+      message.error('获取验证码失败')
+    }
+  } catch (error) {
+    message.error('获取验证码失败')
+  }
+}
+
+const adminAuthStore = useAdminAuthStore()
+// 执行管理员登录请求
+const performAdminLogin = async () => {
+  isLoading.value = true
+  try {
+    const response = await postAdminLogin({
+      mobile: adminForm.value.mobile,
+      password: adminForm.value.password,
+    })
+    if (response.data.code === 20000 && response.data.data) {
+      message.success('管理员登录成功')
+
+      // 保存管理员信息到pinia store
+      adminAuthStore.loginSuccess({
+        id: response.data.data.id || 0,
+        nickname: response.data.data.nickname || '管理员',
+        token: response.data.data.token || '',
+      })
+
+      // 触发登录成功事件
+      emit('login-success', response.data.data)
+      handleClose()
+    } else {
+      message.error(response.data.msg || '管理员登录失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '管理员登录失败')
   } finally {
     isLoading.value = false
   }
@@ -226,12 +302,24 @@ const handleVerifyCaptcha = async () => {
     // 计算拼图的实际位置，即滑块位置加上拼图初始位置
     const puzzleX = captchaSliderPosition.value
 
-    // 发送验证请求
-    const response = await postUserCaptchaSlideVerify({
-      key: captchaKey.value,
-      slideX: Math.round(puzzleX),
-      slideY: Math.round(captchaData.value.TitleY), // 使用接口返回的Y坐标
-    })
+    // 根据场景选择不同的验证接口
+    let response
+    if (captchaScene.value === 'adminLogin') {
+      // 管理员登录使用管理员滑块验证接口
+      response = await postAdminCaptchaSlideVerify({
+        key: captchaKey.value,
+        slideX: Math.round(puzzleX),
+        slideY: Math.round(captchaData.value.TitleY), // 使用接口返回的Y坐标
+      })
+    } else {
+      // 用户登录或获取验证码使用用户滑块验证接口
+      response = await postUserCaptchaSlideVerify({
+        key: captchaKey.value,
+        slideX: Math.round(puzzleX),
+        slideY: Math.round(captchaData.value.TitleY), // 使用接口返回的Y坐标
+      })
+    }
+
     if (response.data.code === 20000 && response.data.data) {
       // 保存ticket凭证到localStorage
       const { ticket, expire } = response.data.data
@@ -247,8 +335,14 @@ const handleVerifyCaptcha = async () => {
       // 检查是否是为了登录而进行的验证
       if (isCaptchaRequired.value) {
         captchaModal.value = false
-        // 验证码验证成功后，发送登录请求
-        await performLogin()
+        // 根据场景选择不同的登录请求
+        if (captchaScene.value === 'adminLogin') {
+          // 管理员登录
+          await performAdminLogin()
+        } else {
+          // 用户登录
+          await performUserLogin()
+        }
         // 重置验证码验证标记
         isCaptchaRequired.value = false
       } else if (captchaScene.value === 'getCode') {
@@ -322,7 +416,14 @@ const startCountDown = () => {
 // 重新获取滑块验证码
 const fetchNewCaptcha = async () => {
   try {
-    const result = await getUserCaptchaSlide()
+    let result
+    // 根据场景选择不同的获取验证码接口
+    if (captchaScene.value === 'adminLogin') {
+      result = await getAdminCaptchaSlide()
+    } else {
+      result = await getUserCaptchaSlide()
+    }
+
     if (result.data.code === 20000 && result.data.data) {
       captchaData.value = result.data.data
       captchaKey.value = result.data.data.key || ''
@@ -725,9 +826,52 @@ onUnmounted(() => {
 
     <div class="login-modal-content">
       <h1 class="login-title">GoshowMall</h1>
-      <p class="login-subtitle">欢迎登录</p>
+      <p class="login-subtitle">{{ isAdminMode ? '管理员登录' : '欢迎登录' }}</p>
 
-      <Tabs v-model:activeKey="activeTab" animated class="login-tabs" size="small">
+      <!-- 管理员登录表单 -->
+      <div v-if="isAdminMode">
+        <Form layout="vertical">
+          <Form.Item label="用户名" required>
+            <Input
+              v-model:value="adminForm.mobile"
+              placeholder="请输入管理员手机号"
+              size="large"
+              allow-clear
+            >
+              <template #prefix>
+                <UserOutlined />
+              </template>
+            </Input>
+          </Form.Item>
+
+          <Form.Item label="密码" required>
+            <Input.Password
+              v-model:value="adminForm.password"
+              placeholder="请输入管理员密码"
+              size="large"
+            >
+              <template #prefix>
+                <LockOutlined />
+              </template>
+            </Input.Password>
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              size="large"
+              block
+              :loading="isLoading"
+              @click="handleAdminLogin"
+            >
+              管理员登录
+            </Button>
+          </Form.Item>
+        </Form>
+      </div>
+
+      <!-- 用户登录表单 -->
+      <Tabs v-else v-model:activeKey="activeTab" animated class="login-tabs" size="small">
         <Tabs.TabPane key="account" tab="手机号登录">
           <Form layout="vertical">
             <Form.Item label="手机号" required>
@@ -867,6 +1011,11 @@ onUnmounted(() => {
         <a href="#" @click.prevent>立即注册</a>
         <span class="divider">|</span>
         <a href="#" @click.prevent>忘记密码？</a>
+      </div>
+
+      <!-- 管理员/用户切换图标 -->
+      <div class="login-mode-toggle" @click="toggleLoginMode" title="切换管理员/用户登录">
+        <component :is="isAdminMode ? UserOutlined : TeamOutlined" class="toggle-icon" />
       </div>
     </div>
   </Modal>
@@ -1101,6 +1250,39 @@ onUnmounted(() => {
 .divider {
   margin: 0 8px;
   color: #ddd;
+}
+
+/* 管理员/用户切换图标样式 */
+.login-mode-toggle {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.login-mode-toggle:hover {
+  background-color: #1890ff;
+  color: white;
+  transform: scale(1.1);
+}
+
+.toggle-icon {
+  font-size: 20px;
+  color: #666;
+  transition: color 0.3s ease;
+}
+
+.login-mode-toggle:hover .toggle-icon {
+  color: white;
 }
 
 /* 滑块验证码样式 */

@@ -59,10 +59,10 @@ const handleLarkAuth = async () => {
         showSuccess.value = true
 
         // 如果在iframe中，向父页面发送登录成功消息
-        if (isInIframe()) {
+        if (isInIframe() && response.data.data) {
           // 发送登录成功消息给父页面
           window.parent.postMessage(
-            { type: 'lark-login-success', token: response.data.token },
+            { type: 'lark-login-success', token: response.data.data.token },
             window.location.origin,
           )
 
@@ -74,7 +74,7 @@ const handleLarkAuth = async () => {
         }
       }, 1500)
     } else {
-      throw new Error(response.msg || '飞书登录失败')
+      throw new Error(response.data.msg || '飞书登录失败')
     }
   } catch (error: any) {
     console.error('飞书授权登录失败:', error)
