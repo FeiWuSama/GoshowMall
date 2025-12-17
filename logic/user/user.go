@@ -28,6 +28,41 @@ type Service struct {
 	larkRpc     *rpc.LarkRpc
 }
 
+func (s Service) SRegister(ctx context.Context, dto *dto.UserRegisterDto) error {
+	smsLoginCode, err := s.verify.GetSmsLoginCode(ctx, dto.Mobile, dto.Scene)
+	if err != nil {
+		return err
+	}
+	if smsLoginCode != dto.VerifyCode {
+		return result.NewBusinessErrorWithMsg(result.ParamError, "手机验证码错误")
+	}
+	user, err := s.userMapper.GetUserByMobile(ctx, dto.Mobile)
+	if err != nil {
+		return err
+	}
+	if user != nil {
+		return result.NewBusinessErrorWithMsg(result.ParamError, "手机号已被注册")
+	}
+	user, err = s.userMapper.GetUserByNickName(ctx, dto.NickName)
+	if err != nil {
+		return err
+	}
+	if user != nil {
+		return result.NewBusinessErrorWithMsg(result.ParamError, "昵称已被使用")
+	}
+	newUser := &model.User{
+		NickName: dto.NickName,
+		Password: md5.MD5(dto.Password),
+		Sex:      dto.Sex,
+	}
+	userId, err := s.userMapper.AddUser(ctx, newUser)
+	if err != nil {
+		return err
+	}
+	err = s.userMapper.AddMobileUser(ctx, userId, dto.Mobile)
+	return nil
+}
+
 func (s Service) SLogin(context context.Context, userMobileLoginDto interface{}) (*vo.UserVo, error) {
 	var user *model.User
 	var err error

@@ -251,6 +251,8 @@ func (c *Ctrl) MobileLoginBySmsCode(ctx *gin.Context) {
 	userMobileSmsLoginDto := &dto.UserMobileSmsLoginDto{}
 	if err := ctx.ShouldBindJSON(userMobileSmsLoginDto); err != nil {
 		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ParamError))
+		ctx.Abort()
+		return
 	}
 	userVo, err := c.userService.SLogin(ctx.Request.Context(), userMobileSmsLoginDto)
 	errorIf := result.ErrorIf(ctx, err)
@@ -258,4 +260,28 @@ func (c *Ctrl) MobileLoginBySmsCode(ctx *gin.Context) {
 		return
 	}
 	result.NewResultWithOk[vo.UserVo](ctx, *userVo)
+}
+
+// Register
+// @Summary 注册
+// @Tags user
+// @Accept json
+// @Produce json
+// @param userRegisterDto body dto.UserRegisterDto true "用户注册信息"
+// @Success 200 {object} result.Result[any]
+// @host localhost:8080
+// @Router /api/user/register [post]
+func (c *Ctrl) Register(ctx *gin.Context) {
+	userRegisterDto := &dto.UserRegisterDto{}
+	if err := ctx.ShouldBindJSON(userRegisterDto); err != nil {
+		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ParamError))
+		ctx.Abort()
+		return
+	}
+	err := c.userService.SRegister(ctx.Request.Context(), userRegisterDto)
+	errorIf := result.ErrorIf(ctx, err)
+	if errorIf {
+		return
+	}
+	result.NewResultWithOk[any](ctx, nil)
 }

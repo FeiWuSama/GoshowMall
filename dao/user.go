@@ -2,12 +2,16 @@ package dao
 
 import (
 	"context"
+	"github.com/cnchef/gconv"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
+	"time"
 	"workspace-goshow-mall/adaptor"
 	"workspace-goshow-mall/adaptor/repo/model"
 	"workspace-goshow-mall/adaptor/repo/query"
 	"workspace-goshow-mall/result"
+	"workspace-goshow-mall/utils/aes"
+	"workspace-goshow-mall/utils/random"
 	"workspace-goshow-mall/utils/sha256"
 )
 
@@ -21,6 +25,49 @@ func NewUserDao(adaptor adaptor.Adaptor) *UserDao {
 type UserDao struct {
 	db          *gorm.DB
 	redisClient *redis.Client
+}
+
+func (u UserDao) AddMobileUser(ctx context.Context, id int64, mobile string) error {
+	qs := query.Use(u.db).MobileUser
+	encryptAES, err := aes.EncryptAES([]byte(mobile), []byte("feiwusama"))
+	if err != nil {
+		return err
+	}
+	return qs.WithContext(ctx).Create(&model.MobileUser{
+		MobileAes:    string(encryptAES),
+		MobileSha256: sha256.NewSHA256Crypto().HashToBase64(mobile),
+		UserID:       id,
+		CreateAt:     time.Now(),
+		UpdateAt:     time.Now(),
+	})
+}
+
+func (u UserDao) AddUser(ctx context.Context, newUser *model.User) (int64, error) {
+	qs := query.Use(u.db).User
+	if &newUser.CreateBy == nil {
+		newUser.CreateBy = 0
+	}
+	id := random.GenUUId()
+	insertUser := &model.User{
+		ID:       int64(gconv.ToInt(id)),
+		NickName: newUser.NickName,
+		Password: newUser.Password,
+		Sex:      newUser.Sex,
+		Status:   1,
+		CreateAt: time.Now(),
+		UpdateAt: time.Now(),
+		CreateBy: newUser.CreateBy,
+	}
+	err := qs.WithContext(ctx).Create(insertUser)
+	if err != nil {
+		return 0, err
+	}
+	return insertUser.ID, nil
+}
+
+func (u UserDao) GetUserByNickName(ctx context.Context, name string) (*model.User, error) {
+	qs := query.Use(u.db).User
+	return qs.WithContext(ctx).Where(qs.NickName.Eq(name)).First()
 }
 
 func (u UserDao) GetUserByOpenIdAndCode(ctx context.Context, id string, code int32) (*model.User, error) {

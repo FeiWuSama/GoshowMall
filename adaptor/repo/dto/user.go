@@ -4,6 +4,15 @@ type UserMobileLoginDto struct {
 	Mobile string `json:"mobile"`
 }
 
+type UserRegisterDto struct {
+	Mobile     string `json:"mobile"`
+	NickName   string `json:"nickname"`
+	Password   string `json:"password"`
+	Sex        int32  `json:"sex"`
+	VerifyCode string `json:"verify_code"`
+	Scene      string `json:"scene"`
+}
+
 type UserMobilePasswordLoginDto struct {
 	UserMobileLoginDto
 	Ticket   string `json:"ticket"`
