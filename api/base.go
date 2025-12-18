@@ -23,14 +23,14 @@ func (c *BaseCtrl) GetUserVo(ctx context.Context, adaptor *adaptor.Adaptor, toke
 	return userVo, nil
 }
 
-func (c *BaseCtrl) GetAdminVo(ctx context.Context, adaptor *adaptor.Adaptor, token string) (*vo.UserVo, error) {
+func (c *BaseCtrl) GetAdminVo(ctx context.Context, adaptor *adaptor.Adaptor, token string) (*vo.AdminVO, error) {
 	re, err := adaptor.Redis.Get(ctx, constants.AdminTokenKey+token).Result()
 	if err != nil {
 		return nil, err
 	}
-	var userVo *vo.UserVo
-	if err := json.Unmarshal([]byte(re), &userVo); err != nil {
+	var adminVO *vo.AdminVO
+	if err := json.Unmarshal([]byte(re), &adminVO); err != nil {
 		return nil, err
 	}
-	return userVo, nil
+	return adminVO, nil
 }

@@ -56,6 +56,19 @@ func (v *Verify) GetUserToken(ctx context.Context, key string) (string, error) {
 	return result, nil
 }
 
+func (v *Verify) SaveAdminToken(ctx context.Context, key string, value string) error {
+	return v.redis.Set(ctx, constants.AdminTokenKey+key, value, constants.TokenExpire*time.Second).Err()
+}
+
+func (v *Verify) GetAdminToken(ctx context.Context, key string) (string, error) {
+	result, err := v.redis.Get(ctx, constants.AdminTokenKey+key).Result()
+	if err != nil {
+		v.redis.Del(ctx, constants.AdminToken+key)
+		return "", err
+	}
+	return result, nil
+}
+
 func (v *Verify) IncrPasswordErrorCount(ctx context.Context, key string) (int64, error) {
 	result, err := v.redis.Incr(ctx, constants.PasswordErrorKey+key).Result()
 	if err != nil {

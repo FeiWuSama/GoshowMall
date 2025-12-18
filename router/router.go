@@ -108,7 +108,7 @@ func (r *Router) route(root *gin.RouterGroup) {
 
 func (r *Router) adminRoute(root *gin.RouterGroup) {
 	// 鉴权中间件
-	adminRoute := root.Group("/admin", AdminAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*vo.UserVo, error) {
+	adminRoute := root.Group("/admin", AdminAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*vo.AdminVO, error) {
 		return r.admin.GetAdminVo(c, r.adaptor, token)
 	}, r.adaptor))
 	{
@@ -118,6 +118,7 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 		adminRoute.POST("/status/:id/:status", r.admin.ChangeStatus)
 		adminRoute.POST("/captcha/slide/verify", r.admin.VerifySlideCaptcha)
 		adminRoute.POST("/login", r.admin.Login)
+		adminRoute.GET("/info", r.admin.GetAdminInfo)
 	}
 	userRoute := root.Group("/user", UserAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*vo.UserVo, error) {
 		return r.user.GetUserVo(c, r.adaptor, token)

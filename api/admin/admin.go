@@ -259,3 +259,22 @@ func (c *Ctrl) Login(ctx *gin.Context) {
 	}
 	result.NewResultWithOk[vo.AdminVO](ctx, *adminVo)
 }
+
+// GetAdminInfo
+// @Summary 获取管理员信息
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {object} result.Result[vo.AdminVO]
+// @host localhost:8080
+// @Router /api/admin/info [get]
+func (c *Ctrl) GetAdminInfo(ctx *gin.Context) {
+	adminVo, err := c.GetAdminVo(ctx.Request.Context(), c.adaptor, ctx.Request.Header.Get(constants.AdminToken))
+	if err != nil {
+		logger.Error("get user info error", zap.Error(err))
+		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ServerError))
+		ctx.Abort()
+		return
+	}
+	result.NewResultWithOk[vo.AdminVO](ctx, *adminVo)
+}

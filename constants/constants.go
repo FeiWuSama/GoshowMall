@@ -2,7 +2,7 @@ package constants
 
 const (
 	UserToken  = "token"
-	AdminToken = "token"
+	AdminToken = "admin-token"
 )
 
 const (

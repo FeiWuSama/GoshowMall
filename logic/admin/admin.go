@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"github.com/goccy/go-json"
 	"workspace-goshow-mall/adaptor"
 	"workspace-goshow-mall/adaptor/redis"
 	"workspace-goshow-mall/adaptor/repo/dto"
@@ -31,12 +32,19 @@ func (s *Service) SLogin(ctx context.Context, loginDto *dto.AdminLoginDto, ticke
 	if !md5.MD5Verify(loginDto.Password, admin.Password) || admin.Status == constants.UserBanStatus {
 		return nil, result.NewBusinessErrorWithMsg(result.ParamError, "手机号或密码错误")
 	}
-	return &vo.AdminVO{
+	token := random.GenUUId()
+	adminVo := &vo.AdminVO{
 		Id:       admin.ID,
 		Name:     admin.Name,
 		Nickname: admin.NickName,
-		Token:    random.GenUUId(),
-	}, nil
+		Token:    token,
+	}
+	adminVoJson, err := json.Marshal(adminVo)
+	err = s.verify.SaveAdminToken(ctx, token, string(adminVoJson))
+	if err != nil {
+		return nil, err
+	}
+	return adminVo, nil
 }
 
 func (s *Service) SChangeStatus(ctx context.Context, id string, status string, changeUserId int64) bool {

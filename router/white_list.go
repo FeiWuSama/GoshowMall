@@ -12,4 +12,5 @@ var whiteList = map[string]bool{
 	"/user/mobile/smsCode":        true,
 	"/admin/login":                true,
 	"/admin/captcha/slide/verify": true,
+	"/admin/info":                 true,
 }
