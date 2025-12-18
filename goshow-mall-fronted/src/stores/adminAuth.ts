@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getUserInfo as apiGetUserInfo } from '@/api/admin.ts'
+import {  getAdminInfo } from '@/api/admin.ts'
 import { message } from 'ant-design-vue'
 import Cookies from 'js-cookie'
 
@@ -30,11 +30,12 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
 
   // 页面加载时自动登录管理员
   const autoLogin = async () => {
+    debugger
     // 从cookies获取token
     const token = Cookies.get('admin-token')
     if (token) {
         try {
-          const response = await apiGetUserInfo()
+          const response = await getAdminInfo()
           if (response.data.code === 20000 && response.data.data) {
             // 更新管理员信息
             adminInfo.value = {

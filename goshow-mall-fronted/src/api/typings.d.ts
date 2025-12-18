@@ -112,6 +112,15 @@ declare namespace API {
     verify_code?: string
   }
 
+  type UserRegisterDto = {
+    mobile?: string
+    nickname?: string
+    password?: string
+    scene?: string
+    sex?: number
+    verify_code?: string
+  }
+
   type UserVo = {
     avatar?: string
     id?: number

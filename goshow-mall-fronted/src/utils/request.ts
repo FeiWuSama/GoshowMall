@@ -40,6 +40,10 @@ myAxios.interceptors.request.use(
       config.headers['token'] = Cookies.get('token')
     }
 
+    if(Cookies.get('admin-token')){
+      config.headers['admin-token'] = Cookies.get('admin-token')
+    }
+
     return config
   },
   function (error) {

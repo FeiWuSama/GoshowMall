@@ -4,8 +4,10 @@ import { useAuthStore } from './stores/auth'
 import Layout from './layout/Layout.vue'
 import LoginModal from './components/LoginModal.vue'
 import { onMounted } from 'vue'
+import { useAdminAuthStore } from '@/stores/adminAuth.ts'
 
 const authStore = useAuthStore()
+const adminAuthStore = useAdminAuthStore()
 const route = useRoute()
 
 const handleLoginSuccess = (userVo: API.UserVo) => {
@@ -26,6 +28,7 @@ const noLayoutRoutes = ['/user/lark/auth']
 onMounted(() => {
   // 从cookies中获取token并自动登录
   authStore.autoLogin()
+  adminAuthStore.autoLogin()
 })
 </script>
 

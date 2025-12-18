@@ -37,6 +37,14 @@ export async function postAdminCreate(body: API.AddAdminDto, options?: { [key: s
   })
 }
 
+/** 获取管理员信息 GET /api/admin/info */
+export async function getAdminInfo(options?: { [key: string]: any }) {
+  return request<API.ResultVoAdminVO>('/api/admin/info', {
+    method: 'GET',
+    ...(options || {}),
+  })
+}
+
 /** 管理员登录 POST /api/admin/login */
 export async function postAdminLogin(body: API.AdminLoginDto, options?: { [key: string]: any }) {
   return request<API.ResultVoAdminVO>('/api/admin/login', {
@@ -71,14 +79,6 @@ export async function postAdminUpdate(body: API.UpdateAdminDto, options?: { [key
       'Content-Type': 'application/json',
     },
     data: body,
-    ...(options || {}),
-  })
-}
-
-/** 获取管理员信息 GET /api/admin/info */
-export async function getUserInfo(options?: { [key: string]: any }) {
-  return request<API.ResultVoAdminVO>('/api/admin/info', {
-    method: 'GET',
     ...(options || {}),
   })
 }

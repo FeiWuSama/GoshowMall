@@ -3,9 +3,11 @@ import { ref } from 'vue'
 import { Layout, Menu, Button, Dropdown, Avatar } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import {useAdminAuthStore} from '@/stores/adminAuth.ts'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const adminAuthStore = useAdminAuthStore()
 
 interface MenuItem {
   label: string
@@ -72,23 +74,34 @@ const handleUserMenuClick = (e: any) => {
             key: item.key,
           }))
         "
-        @click="(e: any) => {
-          const item = menuItems.find(m => m.key === e.key)
-          if (item) handleMenuClick(item)
-        }"
+        @click="
+          (e: any) => {
+            const item = menuItems.find((m) => m.key === e.key)
+            if (item) handleMenuClick(item)
+          }
+        "
       />
 
       <div class="auth-section">
-        <template v-if="authStore.userInfo">
-          <Dropdown
-            placement="bottom"
-            trigger="hover"
-          >
-            <div style="display: flex; align-items: center; cursor: pointer;">
-              <Avatar :src="authStore.userInfo.avatar || ''" class="user-avatar" style="margin-right: 8px;">
-                {{ authStore.userInfo.nickname?.charAt(0) || '用' }}
-              </Avatar>
-              <span>{{ authStore.userInfo.nickname || '用户' }}</span>
+        <template v-if="authStore.userInfo || adminAuthStore.adminInfo">
+          <Dropdown placement="bottom" trigger="hover">
+            <div style="display: flex; align-items: center; cursor: pointer">
+              <div v-if="authStore.userInfo">
+                <Avatar
+                  :src="authStore.userInfo.avatar || ''"
+                  class="user-avatar"
+                  style="margin-right: 8px"
+                >
+                  {{ authStore.userInfo.nickname?.charAt(0) || '用' }}
+                </Avatar>
+                <span>{{ authStore.userInfo.nickname || '用户' }}</span>
+              </div>
+              <div v-if="adminAuthStore.adminInfo">
+                <Avatar :src="''" class="user-avatar" style="margin-right: 8px;">
+                  {{ adminAuthStore.adminInfo.nickname?.charAt(0) || '用' }}
+                </Avatar>
+                <span>{{ adminAuthStore.adminInfo.nickname || '用户' }}</span>
+              </div>
             </div>
             <template #overlay>
               <Menu @click="handleUserMenuClick">

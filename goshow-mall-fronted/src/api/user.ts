@@ -92,3 +92,18 @@ export async function postUserMobileSmsCode(
     ...(options || {}),
   })
 }
+
+/** 注册 POST /api/user/register */
+export async function postUserRegister(
+  body: API.UserRegisterDto,
+  options?: { [key: string]: any }
+) {
+  return request<API.ResultAny>('/api/user/register', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
