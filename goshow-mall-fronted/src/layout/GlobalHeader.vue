@@ -41,6 +41,7 @@ const handleLogin = () => {
 
 const handleLogout = () => {
   authStore.logout()
+  adminAuthStore.logout()
 }
 
 const handleUserMenuClick = (e: any) => {

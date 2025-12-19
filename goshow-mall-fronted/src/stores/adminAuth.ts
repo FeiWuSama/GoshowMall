@@ -30,7 +30,6 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
 
   // 页面加载时自动登录管理员
   const autoLogin = async () => {
-    debugger
     // 从cookies获取token
     const token = Cookies.get('admin-token')
     if (token) {

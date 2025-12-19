@@ -8,10 +8,10 @@ import {
   postUserMobileLoginPassword,
   postUserMobileSmsCode,
   postUserMobileLoginSmsCode,
+  postUserRegister,
 } from '@/api/user.ts'
 import { getAdminCaptchaSlide, postAdminCaptchaSlideVerify, postAdminLogin } from '@/api/admin.ts'
 import { useAuthStore } from '@/stores/auth.ts'
-import { useAdminAuthStore } from '@/stores/adminAuth.ts'
 import { CODE_SCENE } from '@/constant/constant.ts'
 
 interface Props {
@@ -30,6 +30,9 @@ const emit = defineEmits<{
 
 // 是否为管理员登录模式
 const isAdminMode = ref(false)
+
+// 是否显示注册内容
+const isRegisterMode = ref(false)
 
 // 管理员登录表单
 const adminForm = ref({
@@ -50,6 +53,15 @@ const isCaptchaRequired = ref(false)
 const codeForm = ref({
   phone: '',
   code: '',
+})
+
+// 注册表单
+const registerForm = ref({
+  mobile: '',
+  password: '',
+  confirmPassword: '',
+  code: '',
+  nickname: '',
 })
 
 const isLoading = ref(false)
@@ -79,9 +91,11 @@ const handleClose = () => {
 const resetForms = () => {
   accountForm.value = { mobile: '', password: '' }
   codeForm.value = { phone: '', code: '' }
+  registerForm.value = { mobile: '', password: '', confirmPassword: '', code: '', nickname: '' }
   adminForm.value = { mobile: '', password: '' }
   activeTab.value = 'account'
   countDown.value = 0
+  isRegisterMode.value = false
 }
 
 // 切换管理员/用户登录模式
@@ -186,7 +200,6 @@ const handleAdminLogin = async () => {
   }
 }
 
-const adminAuthStore = useAdminAuthStore()
 // 执行管理员登录请求
 const performAdminLogin = async () => {
   isLoading.value = true
@@ -202,7 +215,9 @@ const performAdminLogin = async () => {
       adminAuthStore.loginSuccess({
         id: response.data.data.id || 0,
         nickname: response.data.data.nickname || '管理员',
+        avatar: response.data.data.avatar || '',
         token: response.data.data.token || '',
+        sex: 0,
       })
 
       // 触发登录成功事件
@@ -218,7 +233,7 @@ const performAdminLogin = async () => {
   }
 }
 
-// 获取验证码
+// 获取验证码（登录）
 const handleGetCode = async () => {
   if (!codeForm.value.phone) {
     message.error('请输入手机号')
@@ -232,8 +247,39 @@ const handleGetCode = async () => {
   }
 
   try {
-    // 设置当前场景为获取验证码
-    captchaScene.value = 'getCode'
+    // 设置当前场景为获取登录验证码
+    captchaScene.value = 'getLoginCode'
+    // 先获取滑块验证码
+    let result = await getUserCaptchaSlide()
+    if (result.data.code === 20000 && result.data.data) {
+      captchaData.value = result.data
+      captchaKey.value = result.data.data.key || ''
+      captchaSliderPosition.value = 0 // 初始位置设置为0
+      captchaModal.value = true // 打开滑块验证码弹窗
+    } else {
+      message.error('获取验证码失败')
+    }
+  } catch (error) {
+    message.error('获取验证码失败')
+  }
+}
+
+// 获取验证码（注册）
+const handleGetRegisterCode = async () => {
+  if (!registerForm.value.mobile) {
+    message.error('请输入手机号')
+    return
+  }
+
+  // 检查是否为手机号
+  if (!isPhoneNumber(registerForm.value.mobile)) {
+    message.error('请输入正确的手机号')
+    return
+  }
+
+  try {
+    // 设置当前场景为获取注册验证码
+    captchaScene.value = 'getRegisterCode'
     // 先获取滑块验证码
     let result = await getUserCaptchaSlide()
     if (result.data.code === 20000 && result.data.data) {
@@ -345,7 +391,10 @@ const handleVerifyCaptcha = async () => {
         }
         // 重置验证码验证标记
         isCaptchaRequired.value = false
-      } else if (captchaScene.value === 'getCode') {
+      } else if (
+        captchaScene.value === 'getLoginCode' ||
+        captchaScene.value === 'getRegisterCode'
+      ) {
         // 如果是为了获取验证码而进行的验证
         captchaModal.value = false
         await sendSmsCode()
@@ -375,11 +424,24 @@ const handleVerifyCaptcha = async () => {
 // 发送短信验证码
 const sendSmsCode = async () => {
   try {
+    // 根据场景决定手机号和验证码类型
+    let mobile, scene
+    if (captchaScene.value === 'getLoginCode') {
+      mobile = codeForm.value.phone
+      scene = CODE_SCENE.LOGIN
+    } else if (captchaScene.value === 'getRegisterCode') {
+      mobile = registerForm.value.mobile
+      scene = 'register' // 注册场景参数为register
+    } else {
+      message.error('未知的验证码场景')
+      return
+    }
+
     // 调用发送验证码接口
     const response = await postUserMobileSmsCode({
       ticket: localStorage.getItem('captchaTicket') || '',
-      mobile: codeForm.value.phone,
-      scene: CODE_SCENE.LOGIN,
+      mobile: mobile,
+      scene: scene,
     })
     if (response.data.code === 20000) {
       message.success('验证码发送成功')
@@ -390,6 +452,80 @@ const sendSmsCode = async () => {
     }
   } catch (error: any) {
     message.error(error.message || '验证码发送失败')
+  }
+}
+
+// 注册处理函数
+const handleRegister = async () => {
+  // 验证表单数据
+  if (!registerForm.value.mobile) {
+    message.error('请输入手机号')
+    return
+  }
+
+  if (!isPhoneNumber(registerForm.value.mobile)) {
+    message.error('请输入正确的手机号')
+    return
+  }
+
+  if (!registerForm.value.code) {
+    message.error('请输入验证码')
+    return
+  }
+
+  if (!registerForm.value.password) {
+    message.error('请输入密码')
+    return
+  }
+
+  if (registerForm.value.password.length < 6) {
+    message.error('密码长度不能少于6位')
+    return
+  }
+
+  if (!registerForm.value.confirmPassword) {
+    message.error('请确认密码')
+    return
+  }
+
+  if (registerForm.value.password !== registerForm.value.confirmPassword) {
+    message.error('两次输入的密码不一致')
+    return
+  }
+
+  if (!registerForm.value.nickname) {
+    message.error('请输入昵称')
+    return
+  }
+
+  isLoading.value = true
+  try {
+    // 调用注册接口
+    const response = await postUserRegister({
+      mobile: registerForm.value.mobile,
+      verify_code: registerForm.value.code,
+      password: registerForm.value.password,
+      nickname: registerForm.value.nickname,
+    })
+
+    if (response.data.code === 20000) {
+      message.success('注册成功')
+      // 保存手机号
+      const mobile = registerForm.value.mobile
+      // 注册成功后自动切换到登录Tab
+      activeTab.value = 'account'
+      // 清空注册表单
+      registerForm.value = { mobile: '', password: '', confirmPassword: '', code: '', nickname: '' }
+      // 填充手机号到登录表单
+      accountForm.value.mobile = mobile
+      message.info('请使用注册的账号登录')
+    } else {
+      message.error(response.data.msg || '注册失败')
+    }
+  } catch (error: any) {
+    message.error(error.message || '注册失败')
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -826,8 +962,12 @@ onUnmounted(() => {
 
     <div class="login-modal-content">
       <h1 class="login-title">GoshowMall</h1>
-      <p class="login-subtitle">{{ isAdminMode ? '管理员登录' : '欢迎登录' }}</p>
-
+      <div v-if="!isRegisterMode">
+        <p class="login-subtitle">{{ isAdminMode ? '管理员登录' : '欢迎登录' }}</p>
+      </div>
+      <div v-else>
+        <p class="login-subtitle">用户注册</p>
+      </div>
       <!-- 管理员登录表单 -->
       <div v-if="isAdminMode">
         <Form layout="vertical">
@@ -871,151 +1011,242 @@ onUnmounted(() => {
       </div>
 
       <!-- 用户登录表单 -->
-      <Tabs v-else v-model:activeKey="activeTab" animated class="login-tabs" size="small">
-        <Tabs.TabPane key="account" tab="手机号登录">
-          <Form layout="vertical">
-            <Form.Item label="手机号" required>
-              <Input
-                v-model:value="accountForm.mobile"
-                placeholder="请输入手机号"
-                size="large"
-                allow-clear
-              >
-                <template #prefix>
-                  <PhoneOutlined />
-                </template>
-              </Input>
-            </Form.Item>
-
-            <Form.Item label="密码" required>
-              <Input.Password
-                v-model:value="accountForm.password"
-                placeholder="请输入密码"
-                size="large"
-              >
-                <template #prefix>
-                  <LockOutlined />
-                </template>
-              </Input.Password>
-            </Form.Item>
-
-            <Form.Item>
-              <Button
-                type="primary"
-                size="large"
-                block
-                :loading="isLoading"
-                @click="handleAccountLogin"
-              >
-                登录
-              </Button>
-            </Form.Item>
-          </Form>
-        </Tabs.TabPane>
-
-        <!-- 验证码登录 -->
-        <Tabs.TabPane key="code" tab="验证码登录">
-          <Form layout="vertical">
-            <Form.Item label="手机号" required>
-              <Input
-                v-model:value="codeForm.phone"
-                placeholder="请输入手机号"
-                size="large"
-                allow-clear
-              >
-                <template #prefix>
-                  <PhoneOutlined />
-                </template>
-              </Input>
-            </Form.Item>
-
-            <Form.Item label="验证码" required>
-              <Space style="width: 100%; gap: 8px">
+      <div v-if="!isRegisterMode">
+        <Tabs v-model:activeKey="activeTab" animated class="login-tabs" size="small">
+          <Tabs.TabPane key="account" tab="手机号登录">
+            <Form layout="vertical">
+              <Form.Item label="手机号" required>
                 <Input
-                  v-model:value="codeForm.code"
-                  placeholder="请输入验证码"
+                  v-model:value="accountForm.mobile"
+                  placeholder="请输入手机号"
                   size="large"
-                  style="flex: 1"
                   allow-clear
-                />
-                <Button
-                  type="default"
-                  size="large"
-                  :disabled="countDown > 0"
-                  @click="handleGetCode"
-                  style="width: 120px; text-align: center; min-width: 120px"
                 >
-                  {{ countDown > 0 ? `${countDown}s` : '获取验证码' }}
+                  <template #prefix>
+                    <PhoneOutlined />
+                  </template>
+                </Input>
+              </Form.Item>
+
+              <Form.Item label="密码" required>
+                <Input.Password
+                  v-model:value="accountForm.password"
+                  placeholder="请输入密码"
+                  size="large"
+                >
+                  <template #prefix>
+                    <LockOutlined />
+                  </template>
+                </Input.Password>
+              </Form.Item>
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  size="large"
+                  block
+                  :loading="isLoading"
+                  @click="handleAccountLogin"
+                >
+                  登录
                 </Button>
-              </Space>
-            </Form.Item>
+              </Form.Item>
+            </Form>
+          </Tabs.TabPane>
 
-            <Form.Item>
-              <Button
-                type="primary"
-                size="large"
-                block
-                :loading="isLoading"
-                @click="handleCodeLogin"
-              >
-                登录
-              </Button>
-            </Form.Item>
-          </Form>
-        </Tabs.TabPane>
+          <!-- 验证码登录 -->
+          <Tabs.TabPane key="code" tab="验证码登录">
+            <Form layout="vertical">
+              <Form.Item label="手机号" required>
+                <Input
+                  v-model:value="codeForm.phone"
+                  placeholder="请输入手机号"
+                  size="large"
+                  allow-clear
+                >
+                  <template #prefix>
+                    <PhoneOutlined />
+                  </template>
+                </Input>
+              </Form.Item>
 
-        <!-- 飞书扫码登录 -->
-        <Tabs.TabPane key="feishu" tab="飞书扫码">
-          <div class="feishu-login-container">
-            <!-- 二维码容器 -->
-            <div v-if="!feishuLoginState.showAuthIframe" style="text-align: center">
-              <div
-                id="login_container"
-                style="
-                  width: 250px;
-                  height: 250px;
-                  margin: 0 auto;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                "
-              ></div>
+              <Form.Item label="验证码" required>
+                <Space style="width: 100%; gap: 8px">
+                  <Input
+                    v-model:value="codeForm.code"
+                    placeholder="请输入验证码"
+                    size="large"
+                    style="flex: 1"
+                    allow-clear
+                  />
+                  <Button
+                    type="default"
+                    size="large"
+                    :disabled="countDown > 0"
+                    @click="handleGetCode"
+                    style="width: 120px; text-align: center; min-width: 120px"
+                  >
+                    {{ countDown > 0 ? `${countDown}s` : '获取验证码' }}
+                  </Button>
+                </Space>
+              </Form.Item>
 
-              <!-- 加载中状态 -->
-              <div
-                v-if="feishuLoginState.isLoading"
-                style="text-align: center; margin-top: 16px; color: #1890ff"
-              >
-                正在加载二维码...
+              <Form.Item>
+                <Button
+                  type="primary"
+                  size="large"
+                  block
+                  :loading="isLoading"
+                  @click="handleCodeLogin"
+                >
+                  登录
+                </Button>
+              </Form.Item>
+            </Form>
+          </Tabs.TabPane>
+
+          <!-- 飞书扫码登录 -->
+          <Tabs.TabPane key="feishu" tab="飞书扫码">
+            <div class="feishu-login-container">
+              <!-- 二维码容器 -->
+              <div v-if="!feishuLoginState.showAuthIframe" style="text-align: center">
+                <div
+                  id="login_container"
+                  style="
+                    width: 250px;
+                    height: 250px;
+                    margin: 0 auto;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                ></div>
+
+                <!-- 加载中状态 -->
+                <div
+                  v-if="feishuLoginState.isLoading"
+                  style="text-align: center; margin-top: 16px; color: #1890ff"
+                >
+                  正在加载二维码...
+                </div>
               </div>
+
+              <!-- 授权iframe容器 -->
+              <div v-else class="feishu-auth-iframe-container">
+                <iframe
+                  :src="qrLoginGoto"
+                  class="feishu-auth-iframe"
+                  frameborder="0"
+                  allow="autoplay; fullscreen; clipboard-read; clipboard-write"
+                ></iframe>
+              </div>
+
+              <p style="text-align: center; color: #666; margin-top: 16px">
+                使用飞书扫描二维码登录
+              </p>
             </div>
+          </Tabs.TabPane>
+        </Tabs>
 
-            <!-- 授权iframe容器 -->
-            <div v-else class="feishu-auth-iframe-container">
-              <iframe
-                :src="qrLoginGoto"
-                class="feishu-auth-iframe"
-                frameborder="0"
-                allow="autoplay; fullscreen; clipboard-read; clipboard-write"
-              ></iframe>
-            </div>
+        <!-- 底部链接 -->
+        <div class="login-footer">
+          <span>没有账号？</span>
+          <a href="#" @click.prevent="isRegisterMode = true">立即注册</a>
+          <span class="divider">|</span>
+          <a href="#" @click.prevent>忘记密码？</a>
+        </div>
 
-            <p style="text-align: center; color: #666; margin-top: 16px">使用飞书扫描二维码登录</p>
-          </div>
-        </Tabs.TabPane>
-      </Tabs>
-
-      <!-- 底部链接 -->
-      <div class="login-footer">
-        <span>没有账号？</span>
-        <a href="#" @click.prevent>立即注册</a>
-        <span class="divider">|</span>
-        <a href="#" @click.prevent>忘记密码？</a>
+        <!-- 管理员/用户切换图标 -->
+        <div class="login-mode-toggle" @click="toggleLoginMode" title="切换管理员/用户登录">
+          <component :is="isAdminMode ? UserOutlined : TeamOutlined" class="toggle-icon" />
+        </div>
       </div>
 
-      <!-- 管理员/用户切换图标 -->
-      <div class="login-mode-toggle" @click="toggleLoginMode" title="切换管理员/用户登录">
-        <component :is="isAdminMode ? UserOutlined : TeamOutlined" class="toggle-icon" />
+      <!-- 注册表单 -->
+      <div v-else>
+        <Form layout="vertical">
+          <Form.Item label="昵称" required>
+            <Input
+              v-model:value="registerForm.nickname"
+              placeholder="请输入昵称"
+              size="large"
+              allow-clear
+            >
+              <template #prefix>
+                <UserOutlined />
+              </template>
+            </Input>
+          </Form.Item>
+
+          <Form.Item label="手机号" required>
+            <Input
+              v-model:value="registerForm.mobile"
+              placeholder="请输入手机号"
+              size="large"
+              allow-clear
+            >
+              <template #prefix>
+                <PhoneOutlined />
+              </template>
+            </Input>
+          </Form.Item>
+
+          <Form.Item label="验证码" required>
+            <Space style="width: 100%; gap: 8px">
+              <Input
+                v-model:value="registerForm.code"
+                placeholder="请输入验证码"
+                size="large"
+                style="flex: 1"
+                allow-clear
+              />
+              <Button
+                type="default"
+                size="large"
+                :disabled="countDown > 0"
+                @click="handleGetRegisterCode"
+                style="width: 120px; text-align: center; min-width: 120px"
+              >
+                {{ countDown > 0 ? `${countDown}s` : '获取验证码' }}
+              </Button>
+            </Space>
+          </Form.Item>
+
+          <Form.Item label="密码" required>
+            <Input.Password
+              v-model:value="registerForm.password"
+              placeholder="请输入密码"
+              size="large"
+            >
+              <template #prefix>
+                <LockOutlined />
+              </template>
+            </Input.Password>
+          </Form.Item>
+
+          <Form.Item label="确认密码" required>
+            <Input.Password
+              v-model:value="registerForm.confirmPassword"
+              placeholder="请确认密码"
+              size="large"
+            >
+              <template #prefix>
+                <LockOutlined />
+              </template>
+            </Input.Password>
+          </Form.Item>
+
+          <Form.Item>
+            <Button type="primary" size="large" block :loading="isLoading" @click="handleRegister">
+              注册
+            </Button>
+          </Form.Item>
+
+          <!-- 返回按钮 -->
+          <div class="register-back-button" @click="isRegisterMode = false">
+            <a href="#" @click.prevent> <span>←</span> 返回登录 </a>
+          </div>
+        </Form>
       </div>
     </div>
   </Modal>
@@ -1241,6 +1472,22 @@ onUnmounted(() => {
   text-decoration: none;
   margin: 0 4px;
   transition: color 0.3s;
+}
+
+.register-back-button {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.register-back-button a {
+  color: #1890ff;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.register-back-button a:hover {
+  color: #40a9ff;
+  text-decoration: underline;
 }
 
 .login-footer a:hover {
