@@ -1008,10 +1008,23 @@ onUnmounted(() => {
             </Button>
           </Form.Item>
         </Form>
+
+        <!-- 底部链接 -->
+        <div class="login-footer">
+          <span>没有账号？</span>
+          <a href="#" @click.prevent="isRegisterMode = true">立即注册</a>
+          <span class="divider">|</span>
+          <a href="#" @click.prevent>忘记密码？</a>
+        </div>
+
+        <!-- 管理员/用户切换图标 -->
+        <div class="login-mode-toggle" @click="toggleLoginMode" title="切换管理员/用户登录">
+          <component :is="isAdminMode ? UserOutlined : TeamOutlined" class="toggle-icon" />
+        </div>
       </div>
 
       <!-- 用户登录表单 -->
-      <div v-if="!isRegisterMode">
+      <div v-if="!isRegisterMode && !isAdminMode">
         <Tabs v-model:activeKey="activeTab" animated class="login-tabs" size="small">
           <Tabs.TabPane key="account" tab="手机号登录">
             <Form layout="vertical">
@@ -1163,7 +1176,7 @@ onUnmounted(() => {
       </div>
 
       <!-- 注册表单 -->
-      <div v-else>
+      <div v-if="isRegisterMode">
         <Form layout="vertical">
           <Form.Item label="昵称" required>
             <Input
