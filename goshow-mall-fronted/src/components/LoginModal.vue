@@ -13,6 +13,7 @@ import {
 import { getAdminCaptchaSlide, postAdminCaptchaSlideVerify, postAdminLogin } from '@/api/admin.ts'
 import { useAuthStore } from '@/stores/auth.ts'
 import { CODE_SCENE } from '@/constant/constant.ts'
+import { useAdminAuthStore } from '@/stores/adminAuth.ts'
 
 interface Props {
   visible: boolean
@@ -200,6 +201,7 @@ const handleAdminLogin = async () => {
   }
 }
 
+const adminAuthStore = useAdminAuthStore()
 // 执行管理员登录请求
 const performAdminLogin = async () => {
   isLoading.value = true
@@ -215,9 +217,7 @@ const performAdminLogin = async () => {
       adminAuthStore.loginSuccess({
         id: response.data.data.id || 0,
         nickname: response.data.data.nickname || '管理员',
-        avatar: response.data.data.avatar || '',
         token: response.data.data.token || '',
-        sex: 0,
       })
 
       // 触发登录成功事件
@@ -252,7 +252,7 @@ const handleGetCode = async () => {
     // 先获取滑块验证码
     let result = await getUserCaptchaSlide()
     if (result.data.code === 20000 && result.data.data) {
-      captchaData.value = result.data
+      captchaData.value = result.data.data
       captchaKey.value = result.data.data.key || ''
       captchaSliderPosition.value = 0 // 初始位置设置为0
       captchaModal.value = true // 打开滑块验证码弹窗
@@ -283,7 +283,7 @@ const handleGetRegisterCode = async () => {
     // 先获取滑块验证码
     let result = await getUserCaptchaSlide()
     if (result.data.code === 20000 && result.data.data) {
-      captchaData.value = result.data
+      captchaData.value = result.data.data
       captchaKey.value = result.data.data.key || ''
       captchaSliderPosition.value = 0 // 初始位置设置为0
       captchaModal.value = true // 打开滑块验证码弹窗
@@ -506,6 +506,7 @@ const handleRegister = async () => {
       verify_code: registerForm.value.code,
       password: registerForm.value.password,
       nickname: registerForm.value.nickname,
+      scene: CODE_SCENE.REGISTER,
     })
 
     if (response.data.code === 20000) {
@@ -518,7 +519,7 @@ const handleRegister = async () => {
       registerForm.value = { mobile: '', password: '', confirmPassword: '', code: '', nickname: '' }
       // 填充手机号到登录表单
       accountForm.value.mobile = mobile
-      message.info('请使用注册的账号登录')
+      isRegisterMode.value = false
     } else {
       message.error(response.data.msg || '注册失败')
     }
@@ -884,7 +885,6 @@ const initWaveAnimation = async () => {
 
 onMounted(() => {
   initWaveAnimation()
-  // 移除这里的loadFeishuQRSDK调用，只在需要显示二维码时才加载
 })
 
 watch(
