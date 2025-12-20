@@ -29,25 +29,22 @@ type Service struct {
 }
 
 func (s Service) SRegister(ctx context.Context, dto *dto.UserRegisterDto) error {
-	smsLoginCode, err := s.verify.GetSmsLoginCode(ctx, dto.Mobile, dto.Scene)
+	smsLoginCode, err := s.verify.GetSmsCode(ctx, dto.Mobile, dto.Scene)
 	if err != nil {
 		return err
 	}
 	if smsLoginCode != dto.VerifyCode {
+		logger.Error("verify code error", zap.String("smsLoginCode", smsLoginCode))
 		return result.NewBusinessErrorWithMsg(result.ParamError, "手机验证码错误")
 	}
-	user, err := s.userMapper.GetUserByMobile(ctx, dto.Mobile)
-	if err != nil {
-		return err
-	}
+	user, _ := s.userMapper.GetUserByMobile(ctx, dto.Mobile)
 	if user != nil {
+		logger.Error("user mobile has been register error", zap.Any("user", user))
 		return result.NewBusinessErrorWithMsg(result.ParamError, "手机号已被注册")
 	}
-	user, err = s.userMapper.GetUserByNickName(ctx, dto.NickName)
-	if err != nil {
-		return err
-	}
+	user, _ = s.userMapper.GetUserByNickName(ctx, dto.NickName)
 	if user != nil {
+		logger.Error("user nickname has been register error", zap.Any("user", user))
 		return result.NewBusinessErrorWithMsg(result.ParamError, "昵称已被使用")
 	}
 	newUser := &model.User{
@@ -172,7 +169,7 @@ func (s Service) SPostMobileSmsCode(ctx context.Context, ticket string, mobile s
 		logger.Error("send lark msg error", zap.Error(err))
 		return err
 	}
-	err = s.verify.SaveSmsLoginCode(ctx, mobile, scene, smsCode)
+	err = s.verify.SaveSmsCode(ctx, mobile, scene, smsCode)
 	if err != nil {
 		logger.Error("redis error", zap.Error(err))
 		return err
@@ -181,7 +178,7 @@ func (s Service) SPostMobileSmsCode(ctx context.Context, ticket string, mobile s
 }
 
 func (s Service) getUserByVerifySmsCode(ctx context.Context, loginDto *dto.UserMobileSmsLoginDto) (*model.User, error) {
-	smsLoginCode, err := s.verify.GetSmsLoginCode(ctx, loginDto.Mobile, loginDto.Scene)
+	smsLoginCode, err := s.verify.GetSmsCode(ctx, loginDto.Mobile, loginDto.Scene)
 	if err != nil {
 		return nil, err
 	}

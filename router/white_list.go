@@ -13,4 +13,5 @@ var whiteList = map[string]bool{
 	"/admin/login":                true,
 	"/admin/captcha/slide/verify": true,
 	"/admin/info":                 true,
+	"/user/register":              true,
 }

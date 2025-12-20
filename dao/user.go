@@ -47,7 +47,7 @@ func (u UserDao) AddUser(ctx context.Context, newUser *model.User) (int64, error
 	if &newUser.CreateBy == nil {
 		newUser.CreateBy = 0
 	}
-	id := random.GenUUId()
+	id := random.GenUserUUId()
 	insertUser := &model.User{
 		ID:       int64(gconv.ToInt(id)),
 		NickName: newUser.NickName,

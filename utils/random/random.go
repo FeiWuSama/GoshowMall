@@ -12,6 +12,10 @@ func GenUUId() string {
 	return strings.ReplaceAll(uuid.New().String(), "-", "")
 }
 
+func GenUserUUId() int64 {
+	return int64(uuid.New().ID())
+}
+
 func GenSmsCode(width int) string {
 	nums := [10]byte{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
 	l := len(nums)

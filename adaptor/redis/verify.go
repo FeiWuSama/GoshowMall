@@ -84,11 +84,11 @@ func (v *Verify) DeletePasswordErrorCount(ctx context.Context, key string) error
 	return v.redis.Del(ctx, constants.PasswordErrorKey+key).Err()
 }
 
-func (v *Verify) SaveSmsLoginCode(ctx context.Context, key string, scene string, token string) error {
+func (v *Verify) SaveSmsCode(ctx context.Context, key string, scene string, token string) error {
 	return v.redis.Set(ctx, constants.SmsCodeKey+scene+":"+key, token, constants.SmsLoginExpire*time.Second).Err()
 }
 
-func (v *Verify) GetSmsLoginCode(ctx context.Context, key string, scene string) (string, error) {
+func (v *Verify) GetSmsCode(ctx context.Context, key string, scene string) (string, error) {
 	result, err := v.redis.Get(ctx, constants.SmsCodeKey+scene+":"+key).Result()
 	if err != nil {
 		v.redis.Del(ctx, constants.SmsCodeKey+scene+":"+key)
