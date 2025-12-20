@@ -110,7 +110,7 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 	// 鉴权中间件
 	adminRoute := root.Group("/admin", AdminAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*vo.AdminVO, error) {
 		return r.admin.GetAdminVo(c, r.adaptor, token)
-	}, r.adaptor))
+	}))
 	{
 		adminRoute.GET("/captcha/slide", r.admin.GetSlideCaptcha)
 		adminRoute.POST("/create", r.admin.CreateAdmin)
