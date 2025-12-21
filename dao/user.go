@@ -9,6 +9,7 @@ import (
 	"workspace-goshow-mall/adaptor"
 	"workspace-goshow-mall/adaptor/repo/model"
 	"workspace-goshow-mall/adaptor/repo/query"
+	"workspace-goshow-mall/constants"
 	"workspace-goshow-mall/result"
 	"workspace-goshow-mall/utils/aes"
 	"workspace-goshow-mall/utils/random"
@@ -86,15 +87,19 @@ func (u UserDao) GetUserByOpenIdAndCode(ctx context.Context, id string, code int
 
 func (u UserDao) GetUserByMobile(ctx context.Context, mobile string) (*model.User, error) {
 	mobileSha256 := sha256.NewSHA256Crypto().HashToBase64(mobile)
-	qs1 := query.Use(u.db).MobileUser
-	mobileUser, err := qs1.WithContext(ctx).Where(qs1.MobileSha256.Eq(mobileSha256)).First()
-	if err != nil {
-		return nil, err
-	}
-	if mobileUser == nil {
-		return nil, result.NewBusinessErrorWithMsg(result.ParamError, "手机号未注册")
-	}
-	qs2 := query.Use(u.db).User
-	user, err := qs2.WithContext(ctx).Where(qs2.ID.Eq(mobileUser.UserID)).First()
-	return user, nil
+	//qs1 := query.Use(u.db).MobileUser
+	//mobileUser, err := qs1.WithContext(ctx).Where(qs1.MobileSha256.Eq(mobileSha256)).First()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if mobileUser == nil {
+	//	return nil, result.NewBusinessErrorWithMsg(result.ParamError, "手机号未注册")
+	//}
+	//qs2 := query.Use(u.db).User
+	//user, err := qs2.WithContext(ctx).Where(qs2.ID.Eq(mobileUser.UserID)).First()
+	qs1 := query.Use(u.db).User
+	qs2 := query.Use(u.db).MobileUser
+	return qs1.WithContext(ctx).
+		LeftJoin(qs2, qs1.ID.EqCol(qs2.UserID)).
+		Where(qs1.Status.Eq(constants.UserActiveStatus), qs2.MobileSha256.Eq(mobileSha256)).First()
 }
