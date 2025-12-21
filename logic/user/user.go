@@ -161,7 +161,7 @@ func (s Service) SPostMobileSmsCode(ctx context.Context, ticket string, mobile s
 	}
 	err = s.larkRpc.SendLarkMsg(ctx, getTokenFunc, &dto.UserLarkMsgDto{
 		AppCode: constants.LarkAppCode,
-		Content: fmt.Sprintf("<b>手机验证码通知</b>\n\n手机号：%s\n验证码：%s", mobile, smsCode),
+		Content: fmt.Sprintf("<b>手机%s验证码通知</b>\n\n手机号：%s\n验证码：%s", constants.SmsSceneTemplate[scene], mobile, smsCode),
 		IdType:  constants.ChatIdType,
 		OpenId:  s.adapter.Config.LarkGroupID,
 	})

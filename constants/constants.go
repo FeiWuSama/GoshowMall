@@ -40,3 +40,9 @@ const (
 	UserIdType  = "user_id"
 	ChatIdType  = "chat_id"
 )
+
+var SmsSceneTemplate = map[string]string{
+	"login":          "登录",
+	"register":       "注册",
+	"reset_password": "重置密码",
+}
