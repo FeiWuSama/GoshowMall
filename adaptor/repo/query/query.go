@@ -19,6 +19,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:                 db,
 		Admin:              newAdmin(db, opts...),
+		AdminRole:          newAdminRole(db, opts...),
 		AppUser:            newAppUser(db, opts...),
 		Good:               newGood(db, opts...),
 		GoodsCatalog:       newGoodsCatalog(db, opts...),
@@ -41,6 +42,7 @@ type Query struct {
 	db *gorm.DB
 
 	Admin              admin
+	AdminRole          adminRole
 	AppUser            appUser
 	Good               good
 	GoodsCatalog       goodsCatalog
@@ -64,6 +66,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:                 db,
 		Admin:              q.Admin.clone(db),
+		AdminRole:          q.AdminRole.clone(db),
 		AppUser:            q.AppUser.clone(db),
 		Good:               q.Good.clone(db),
 		GoodsCatalog:       q.GoodsCatalog.clone(db),
@@ -94,6 +97,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:                 db,
 		Admin:              q.Admin.replaceDB(db),
+		AdminRole:          q.AdminRole.replaceDB(db),
 		AppUser:            q.AppUser.replaceDB(db),
 		Good:               q.Good.replaceDB(db),
 		GoodsCatalog:       q.GoodsCatalog.replaceDB(db),
@@ -114,6 +118,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 
 type queryCtx struct {
 	Admin              *adminDo
+	AdminRole          *adminRoleDo
 	AppUser            *appUserDo
 	Good               *goodDo
 	GoodsCatalog       *goodsCatalogDo
@@ -134,6 +139,7 @@ type queryCtx struct {
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
 		Admin:              q.Admin.WithContext(ctx),
+		AdminRole:          q.AdminRole.WithContext(ctx),
 		AppUser:            q.AppUser.WithContext(ctx),
 		Good:               q.Good.WithContext(ctx),
 		GoodsCatalog:       q.GoodsCatalog.WithContext(ctx),

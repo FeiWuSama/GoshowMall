@@ -29,17 +29,17 @@ CREATE TABLE `permission`
 
 CREATE TABLE `admin`
 (
-    `id`           bigint                                                        NOT NULL AUTO_INCREMENT COMMENT '主键-管理员ID表',
-    `name`         varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '名字',
-    `nick_name`    varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '昵称',
-    `mobile`       varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '手机号',
-    `password`     varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '密码',
-    `status`       tinyint                                                       NOT NULL DEFAULT '1' COMMENT '1:正常-1:禁用',
-    `create_at`    datetime                                                      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `update_at`    datetime                                                      NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-    `create_by`    bigint                                                        NOT NULL DEFAULT '0',
-    `update_by`    bigint                                                        NOT NULL DEFAULT '0',
-    `sex`          tinyint                                                       NOT NULL DEFAULT 3 COMMENT '3:其他1:男2:女',
+    `id`        bigint                                                        NOT NULL AUTO_INCREMENT COMMENT '主键-管理员ID表',
+    `name`      varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '名字',
+    `nick_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '昵称',
+    `mobile`    varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '手机号',
+    `password`  varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '密码',
+    `status`    tinyint                                                       NOT NULL DEFAULT '1' COMMENT '1:正常-1:禁用',
+    `create_at` datetime                                                      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_at` datetime                                                      NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    `create_by` bigint                                                        NOT NULL DEFAULT '0',
+    `update_by` bigint                                                        NOT NULL DEFAULT '0',
+    `sex`       tinyint                                                       NOT NULL DEFAULT 3 COMMENT '3:其他1:男2:女',
     PRIMARY KEY (id) USING BTREE,
     UNIQUE KEY idx_mobile (`mobile`) USING BTREE,
     KEY idx_name (`name`) USING BTREE
@@ -66,6 +66,22 @@ CREATE TABLE `role`
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci
   ROW_FORMAT = DYNAMIC COMMENT = '角色表';
+
+CREATE TABLE `goshow_mall`.`admin_role`
+(
+    `id`        bigint      NOT NULL AUTO_INCREMENT,
+    `admin_id`  bigint      NOT NULL COMMENT '管理员id',
+    `role_id`   bigint      NOT NULL COMMENT '角色id',
+    `create_at` datetime(0) NOT NULL,
+    `update_at` datetime(0) NOT NULL,
+    `create_by` bigint      NOT NULL DEFAULT 0,
+    `update_by` bigint      NOT NULL DEFAULT 0,
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 1
+  CHARACTER SET = utf8mb4
+  COLLATE = utf8mb4_general_ci COMMENT = '管理员角色表'
+  ROW_FORMAT = DYNAMIC;
 
 CREATE TABLE `role_permission`
 (
