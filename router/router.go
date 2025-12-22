@@ -12,6 +12,7 @@ import (
 	"workspace-goshow-mall/adaptor"
 	"workspace-goshow-mall/adaptor/repo/vo"
 	"workspace-goshow-mall/api/admin"
+	"workspace-goshow-mall/api/admin/permission"
 	"workspace-goshow-mall/api/user"
 	"workspace-goshow-mall/config"
 	_ "workspace-goshow-mall/docs"
@@ -25,24 +26,26 @@ type IRouter interface {
 }
 
 type Router struct {
-	FullPPROF bool
-	rootPath  string
-	config    config.Config
-	checkFunc func() error
-	user      *user.Ctrl
-	admin     *admin.Ctrl
-	adaptor   *adaptor.Adaptor
+	FullPPROF       bool
+	rootPath        string
+	config          config.Config
+	checkFunc       func() error
+	user            *user.Ctrl
+	admin           *admin.Ctrl
+	adaptor         *adaptor.Adaptor
+	adminPermission *permission.Ctrl
 }
 
 func NewRouter(adaptor *adaptor.Adaptor, config config.Config, checkFunc func() error) *Router {
 	return &Router{
-		FullPPROF: config.Server.EnablePprof,
-		rootPath:  "/api",
-		config:    config,
-		user:      user.NewCtrl(adaptor),
-		admin:     admin.NewCtrl(adaptor),
-		checkFunc: checkFunc,
-		adaptor:   adaptor,
+		FullPPROF:       config.Server.EnablePprof,
+		rootPath:        "/api",
+		config:          config,
+		user:            user.NewCtrl(adaptor),
+		admin:           admin.NewCtrl(adaptor),
+		adminPermission: permission.NewCtrl(adaptor),
+		checkFunc:       checkFunc,
+		adaptor:         adaptor,
 	}
 }
 
@@ -119,6 +122,7 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 		adminRoute.POST("/captcha/slide/verify", r.admin.VerifySlideCaptcha)
 		adminRoute.POST("/login", r.admin.Login)
 		adminRoute.GET("/info", r.admin.GetAdminInfo)
+		adminRoute.POST("/permission/page", r.adminPermission.GetPermissionPage)
 	}
 	userRoute := root.Group("/user", UserAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*vo.UserVo, error) {
 		return r.user.GetUserVo(c, r.adaptor, token)
