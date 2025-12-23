@@ -2,10 +2,10 @@ package permission
 
 import (
 	"github.com/gin-gonic/gin"
+	paginator "github.com/yafeng-Soong/gorm-paginator"
 	"workspace-goshow-mall/adaptor"
 	"workspace-goshow-mall/adaptor/repo/dto"
 	"workspace-goshow-mall/adaptor/repo/model"
-	"workspace-goshow-mall/adaptor/repo/vo"
 	"workspace-goshow-mall/api"
 	"workspace-goshow-mall/logic/permission"
 	"workspace-goshow-mall/result"
@@ -41,9 +41,9 @@ func (c *Ctrl) GetPermissionPage(ctx *gin.Context) {
 		result.NewResultWithError(ctx, nil, result.NewBusinessError(result.ParamError))
 		return
 	}
-	pageVo, err := c.permissionService.SGetAllPermission(ctx.Request.Context(), d)
+	page, err := c.permissionService.SGetAllPermission(ctx.Request.Context(), d)
 	if errorIf := result.ErrorIf(ctx, err); errorIf {
 		return
 	}
-	result.NewResultWithOk[vo.PageVo[*model.Permission]](ctx, *pageVo)
+	result.NewResultWithOk[paginator.Page[*model.Permission]](ctx, *page)
 }

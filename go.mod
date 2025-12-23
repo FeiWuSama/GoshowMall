@@ -80,6 +80,7 @@ require (
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	github.com/wenlng/go-captcha-assets v1.0.7 // indirect
 	github.com/wenlng/go-captcha/v2 v2.0.4 // indirect
+	github.com/yafeng-Soong/gorm-paginator v1.0.2 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect

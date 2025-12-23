@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	paginator "github.com/yafeng-Soong/gorm-paginator"
 	"gorm.io/gorm"
 	"workspace-goshow-mall/adaptor"
 	"workspace-goshow-mall/adaptor/repo/dto"
@@ -9,38 +10,46 @@ import (
 	"workspace-goshow-mall/adaptor/repo/query"
 )
 
-type PermissionDao struct {
-	db *gorm.DB
-}
-
 func NewPermissionDao(adaptor adaptor.Adaptor) *PermissionDao {
 	return &PermissionDao{
 		db: adaptor.Db,
 	}
 }
 
-func (p PermissionDao) GetPermissionPage(ctx context.Context, d *dto.PageDto) ([]*model.Permission, int64, error) {
+type PermissionDao struct {
+	db *gorm.DB
+}
+
+//func (p PermissionDao) GetPermissionPageByRoleId(ctx context.Context, roleId int64) ([]*model.Permission, error) {
+//	qs1 := query.Use(p.db).Permission
+//	qs2 := query.Use(p.db).RolePermission
+//	qs1.WithContext(ctx).LeftJoin(qs2, qs2.PermissionID.EqCol(qs1.ID))
+//}
+
+func (p PermissionDao) GetPermissionPage(ctx context.Context, d *dto.PageDto) (*paginator.Page[*model.Permission], error) {
 	qs := query.Use(p.db).Permission
 	do := qs.WithContext(ctx)
+	do.Where(qs.Status.Eq(1))
 	if d.Name != "" {
-		do.Where(qs.Name.Like("%" + d.Name + "%"))
+		do = do.Where(qs.Name.Like("%" + d.Name + "%"))
 	}
 	if d.Sort != 0 {
 		if d.Sort == 1 {
-			do.WithContext(ctx).Order(qs.Sort.Asc())
+			do = do.Order(qs.Sort.Asc())
 		} else if d.Sort == -1 {
-			do.WithContext(ctx).Order(qs.Sort.Desc())
+			do = do.Order(qs.Sort.Desc())
 		}
 	}
 	if d.CreateBy != 0 {
-		do.Where(qs.CreateBy.Eq(d.CreateBy))
+		do = do.Where(qs.CreateBy.Eq(d.CreateBy))
 	}
 	if d.UpdateBy != 0 {
-		do.Where(qs.UpdateBy.Eq(d.UpdateBy))
+		do = do.Where(qs.UpdateBy.Eq(d.UpdateBy))
 	}
-	page, total, err := do.FindByPage(d.PageNum-1, d.PageSize)
+	page := paginator.Page[*model.Permission]{CurrentPage: d.PageNum, PageSize: d.PageSize}
+	err := page.SelectPages(do.UnderlyingDB())
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	return page, total, err
+	return &page, nil
 }
