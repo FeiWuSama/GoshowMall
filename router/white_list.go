@@ -15,4 +15,5 @@ var whiteList = map[string]bool{
 	"/admin/info":                 true,
 	"/user/register":              true,
 	"/admin/permission/page":      true,
+	"/api/admin/role/permission":  true,
 }

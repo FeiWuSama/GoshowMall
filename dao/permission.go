@@ -20,11 +20,11 @@ type PermissionDao struct {
 	db *gorm.DB
 }
 
-//func (p PermissionDao) GetPermissionPageByRoleId(ctx context.Context, roleId int64) ([]*model.Permission, error) {
-//	qs1 := query.Use(p.db).Permission
-//	qs2 := query.Use(p.db).RolePermission
-//	qs1.WithContext(ctx).LeftJoin(qs2, qs2.PermissionID.EqCol(qs1.ID))
-//}
+func (p PermissionDao) GetPermissionPageByRoleId(ctx context.Context, roleId int64) ([]*model.Permission, error) {
+	qs1 := query.Use(p.db).Permission
+	qs2 := query.Use(p.db).RolePermission
+	return qs1.WithContext(ctx).LeftJoin(qs2, qs2.PermissionID.EqCol(qs1.ID)).Where(qs2.RoleID.Eq(roleId), qs1.Status.Eq(1)).Find()
+}
 
 func (p PermissionDao) GetPermissionPage(ctx context.Context, d *dto.PageDto) (*paginator.Page[*model.Permission], error) {
 	qs := query.Use(p.db).Permission

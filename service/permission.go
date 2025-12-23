@@ -9,4 +9,5 @@ import (
 
 type IPermissionService interface {
 	SGetAllPermission(ctx context.Context, d *dto.PageDto) (*paginator.Page[*model.Permission], error)
+	SGetPermissionByRoleId(ctx context.Context, roleId int64) ([]*model.Permission, error)
 }

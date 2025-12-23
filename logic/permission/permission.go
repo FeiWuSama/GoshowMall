@@ -12,6 +12,10 @@ type Service struct {
 	permissionMapper mapper.PermissionMapper
 }
 
+func (s Service) SGetPermissionByRoleId(ctx context.Context, roleId int64) ([]*model.Permission, error) {
+	return s.permissionMapper.GetPermissionPageByRoleId(ctx, roleId)
+}
+
 func (s Service) SGetAllPermission(ctx context.Context, d *dto.PageDto) (*paginator.Page[*model.Permission], error) {
 	page, err := s.permissionMapper.GetPermissionPage(ctx, d)
 	if err != nil {
