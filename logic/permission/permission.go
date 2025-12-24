@@ -12,6 +12,10 @@ type Service struct {
 	permissionMapper mapper.PermissionMapper
 }
 
+func (s Service) SGetPermissionByAdminId(ctx context.Context, userId int64) ([]*model.Permission, error) {
+	return s.permissionMapper.GetPermissionByAdminId(ctx, userId)
+}
+
 func (s Service) SGetPermissionByRoleId(ctx context.Context, roleId int64) ([]*model.Permission, error) {
 	return s.permissionMapper.GetPermissionPageByRoleId(ctx, roleId)
 }

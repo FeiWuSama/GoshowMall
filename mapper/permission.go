@@ -10,4 +10,5 @@ import (
 type PermissionMapper interface {
 	GetPermissionPage(ctx context.Context, d *dto.PageDto) (*paginator.Page[*model.Permission], error)
 	GetPermissionPageByRoleId(ctx context.Context, roleId int64) ([]*model.Permission, error)
+	GetPermissionByAdminId(ctx context.Context, id int64) ([]*model.Permission, error)
 }

@@ -13,6 +13,7 @@ import (
 	"workspace-goshow-mall/adaptor/repo/vo"
 	"workspace-goshow-mall/api/admin"
 	"workspace-goshow-mall/api/admin/permission"
+	"workspace-goshow-mall/api/admin/role"
 	"workspace-goshow-mall/api/user"
 	"workspace-goshow-mall/config"
 	_ "workspace-goshow-mall/docs"
@@ -34,6 +35,7 @@ type Router struct {
 	admin           *admin.Ctrl
 	adaptor         *adaptor.Adaptor
 	adminPermission *permission.Ctrl
+	adminRole       *role.Ctrl
 }
 
 func NewRouter(adaptor *adaptor.Adaptor, config config.Config, checkFunc func() error) *Router {
@@ -122,7 +124,14 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 		adminRoute.POST("/captcha/slide/verify", r.admin.VerifySlideCaptcha)
 		adminRoute.POST("/login", r.admin.Login)
 		adminRoute.GET("/info", r.admin.GetAdminInfo)
-		adminRoute.POST("/permission/page", r.adminPermission.GetPermissionPage)
+		adminPermissionRoute := adminRoute.Group("/permission")
+		{
+			adminPermissionRoute.POST("/permission/page", r.adminPermission.GetPermissionPage)
+		}
+		adminRoleRoute := adminRoute.Group("/role")
+		{
+			adminRoleRoute.GET("/permission/", r.adminRole.GetPermissionByRoleId)
+		}
 	}
 	userRoute := root.Group("/user", UserAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*vo.UserVo, error) {
 		return r.user.GetUserVo(c, r.adaptor, token)
