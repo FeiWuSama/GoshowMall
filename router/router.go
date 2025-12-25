@@ -126,7 +126,8 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 		adminRoute.GET("/info", r.admin.GetAdminInfo)
 		adminPermissionRoute := adminRoute.Group("/permission")
 		{
-			adminPermissionRoute.POST("/permission/page", r.adminPermission.GetPermissionPage)
+			adminPermissionRoute.POST("/page", r.adminPermission.GetPermissionPage)
+			adminPermissionRoute.GET("/tree", r.adminPermission.GetPermissionTree)
 		}
 		adminRoleRoute := adminRoute.Group("/role")
 		{

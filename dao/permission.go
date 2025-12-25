@@ -20,6 +20,11 @@ type PermissionDao struct {
 	db *gorm.DB
 }
 
+func (p PermissionDao) GetPermissionByParentId(ctx context.Context, id int64) ([]*model.Permission, error) {
+	qs := query.Use(p.db).Permission
+	return qs.WithContext(ctx).Where(qs.ParentID.Eq(id)).Find()
+}
+
 func (p PermissionDao) GetPermissionByAdminId(ctx context.Context, id int64) ([]*model.Permission, error) {
 	qs1 := query.Use(p.db).Permission
 	qs2 := query.Use(p.db).RolePermission

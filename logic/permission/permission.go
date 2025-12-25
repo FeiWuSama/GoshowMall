@@ -2,9 +2,11 @@ package permission
 
 import (
 	"context"
+	"github.com/jinzhu/copier"
 	paginator "github.com/yafeng-Soong/gorm-paginator"
 	"workspace-goshow-mall/adaptor/repo/dto"
 	"workspace-goshow-mall/adaptor/repo/model"
+	"workspace-goshow-mall/adaptor/repo/vo"
 	"workspace-goshow-mall/mapper"
 )
 
@@ -26,4 +28,24 @@ func (s Service) SGetAllPermission(ctx context.Context, d *dto.PageDto) (*pagina
 		return nil, err
 	}
 	return page, nil
+}
+
+func (s Service) ConvertPermissionList2Tree(ctx context.Context, id int64) ([]*vo.PermissionVo, error) {
+	permissions, err := s.permissionMapper.GetPermissionByParentId(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	permissionVos := make([]*vo.PermissionVo, len(permissions))
+	err = copier.Copy(&permissionVos, permissions)
+	if err != nil {
+		return nil, err
+	}
+	for _, permission := range permissionVos {
+		children, err := s.ConvertPermissionList2Tree(ctx, permission.ID)
+		if err != nil {
+			return nil, err
+		}
+		permission.Children = children
+	}
+	return permissionVos, nil
 }

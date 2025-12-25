@@ -6,6 +6,7 @@ import (
 	"workspace-goshow-mall/adaptor"
 	"workspace-goshow-mall/adaptor/repo/dto"
 	"workspace-goshow-mall/adaptor/repo/model"
+	"workspace-goshow-mall/adaptor/repo/vo"
 	"workspace-goshow-mall/api"
 	"workspace-goshow-mall/logic/permission"
 	"workspace-goshow-mall/result"
@@ -46,4 +47,20 @@ func (c *Ctrl) GetPermissionPage(ctx *gin.Context) {
 		return
 	}
 	result.NewResultWithOk[paginator.Page[*model.Permission]](ctx, *page)
+}
+
+// GetPermissionTree
+// @Summary 获取权限树
+// @Tags adminPermission
+// @Accept json
+// @Produce json
+// @Success 200 {object} result.Result[vo.PermissionVoList]
+// @host localhost:8080
+// @Router /api/admin/permission/tree [get]
+func (c *Ctrl) GetPermissionTree(ctx *gin.Context) {
+	permissionTree, err := c.permissionService.ConvertPermissionList2Tree(ctx, 0)
+	if errorIf := result.ErrorIf(ctx, err); errorIf {
+		return
+	}
+	result.NewResultWithOk[[]*vo.PermissionVo](ctx, permissionTree)
 }

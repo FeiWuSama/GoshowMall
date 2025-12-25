@@ -32,7 +32,7 @@ func NewCtrl(adaptor *adaptor.Adaptor) *Ctrl {
 // @host localhost:8080
 // @param roleId query int true "角色ID"
 // @Router /api/admin/role/permission [post]
-// @Success 200 {object} result.Result[[]*model.Permission]
+// @Success 200 {object} result.Result[vo.PermissionList]
 func (c *Ctrl) GetPermissionByRoleId(ctx *gin.Context) {
 	roleId := ctx.Query("roleId")
 	permissions, err := c.permissionService.SGetPermissionByRoleId(ctx.Request.Context(), int64(gconv.ToInt(roleId)))
