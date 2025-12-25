@@ -128,11 +128,9 @@ func (r *Router) adminRoute(root *gin.RouterGroup) {
 		{
 			adminPermissionRoute.POST("/page", r.adminPermission.GetPermissionPage)
 			adminPermissionRoute.GET("/tree", r.adminPermission.GetPermissionTree)
+			adminPermissionRoute.GET("/:roleId", r.adminPermission.GetPermissionByRoleId)
 		}
-		adminRoleRoute := adminRoute.Group("/role")
-		{
-			adminRoleRoute.GET("/permission/", r.adminRole.GetPermissionByRoleId)
-		}
+		//adminRoleRoute := adminRoute.Group("/role")
 	}
 	userRoute := root.Group("/user", UserAuthMiddleware(r.SpanFilter, func(c context.Context, token string) (*vo.UserVo, error) {
 		return r.user.GetUserVo(c, r.adaptor, token)

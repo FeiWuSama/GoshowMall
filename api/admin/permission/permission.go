@@ -1,6 +1,7 @@
 package permission
 
 import (
+	"github.com/cnchef/gconv"
 	"github.com/gin-gonic/gin"
 	paginator "github.com/yafeng-Soong/gorm-paginator"
 	"workspace-goshow-mall/adaptor"
@@ -63,4 +64,22 @@ func (c *Ctrl) GetPermissionTree(ctx *gin.Context) {
 		return
 	}
 	result.NewResultWithOk[[]*vo.PermissionVo](ctx, permissionTree)
+}
+
+// GetPermissionByRoleId
+// @Summary 根据角色ID获取权限列表
+// @Tags adminPermission
+// @Accept json
+// @Produce json
+// @host localhost:8080
+// @param roleId query int true "角色ID"
+// @Router /api/admin/role/permission [post]
+// @Success 200 {object} result.Result[vo.PermissionList]
+func (c *Ctrl) GetPermissionByRoleId(ctx *gin.Context) {
+	roleId := ctx.Param("roleId")
+	permissions, err := c.permissionService.SGetPermissionByRoleId(ctx.Request.Context(), int64(gconv.ToInt(roleId)))
+	if errorIf := result.ErrorIf(ctx, err); errorIf {
+		return
+	}
+	result.NewResultWithOk[[]*model.Permission](ctx, permissions)
 }
